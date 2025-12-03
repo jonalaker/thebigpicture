@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { EB_Garamond, Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import ChatWidget from "@/components/chat-widget"
 import "./globals.css"
 
 const garamond = EB_Garamond({ subsets: ["latin"], variable: "--font-serif" })
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${garamond.variable} ${inter.variable} font-sans antialiased bg-background text-foreground`}>
         {children}
+        <ChatWidget />
         <Analytics />
       </body>
     </html>

@@ -12,14 +12,13 @@ export default function Header() {
     { label: "About the Book", href: "#about" },
     { label: "Author", href: "#author" },
     { label: "Contact", href: "#contact" },
-    { label: "Chatbot", href: "/chatbot" },
   ]
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="font-serif text-2xl font-bold text-primary">
-          The Big Picture
+          The-Big-Picture.info
         </Link>
 
         {/* Desktop Navigation */}
