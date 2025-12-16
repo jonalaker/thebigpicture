@@ -1,3 +1,4 @@
+import kevinimage from "../app/images/kevin.jpg"
 export default function Author() {
   return (
     <section id="author" className="py-20 md:py-32 px-4 sm:px-6 lg:px-8">
@@ -8,7 +9,7 @@ export default function Author() {
           {/* Author Image Placeholder */}
           <div className="md:col-span-1 flex justify-center">
             <div className="w-48 h-64 bg-muted rounded-lg flex items-center justify-center border border-border">
-              <span className="text-muted-foreground text-sm">Author Photo</span>
+              <span className="text-muted-foreground text-sm"><img src={kevinimage.src} alt="kevin"  width={200} height={100} /></span>
             </div>
           </div>
 
