@@ -25,12 +25,23 @@ export default function Hero() {
           </p>
 
           <p className="text-lg md:text-xl leading-relaxed mb-6">
-          Sign up (underlined link to above sign up) to out DECENTRALISED STUDIO PORTAL. We will send you the novella: The AiGENT,  a free join-up gift - from the author.         
-           </p>
-           <p className="text-lg md:text-xl leading-relaxed mb-6">
-           DECENTERALIAZED STUDIO is a decentralised platform, designed to be run my users through a Decentralised Autonomous Organisation. (DAO)
-It’s structured so it can never be bought out by media/internet corps, or centralised institutions.
-           </p>
+            Sign up (underlined link to above sign up) to out DECENTRALISED STUDIO PORTAL. We will send you the novella: The AiGENT,  a free join-up gift - from the author.
+          </p>
+          <p className="text-lg md:text-xl leading-relaxed mb-6">
+            DECENTRALISED STUDIOS first job posting:
+            Submit a screenplay, adapted from the novella THE AiGENT
+            Screenplay can be produced with AI assistance. Full liberty is granted to change the novella as preferred. Earn 1000 studio points if your submission is selected, 1 point currently equals 25cents (USD).
+          </p>
+          <p className="text-lg md:text-xl leading-relaxed mb-6">
+            Storyboard, AI character creation, Music score, scene creation, promotional tailors and the final editing jobs will be posted at each stage in the production. All jobs earn point payouts plus a share in the films net sale proceeds.
+            On sale of the film 1 point equals 1 percent of net profit (Approximately $5000, per 1million USD in sales)
+          </p>
+          <p className="text-lg md:text-xl leading-relaxed mb-6">
+            AUTHORS: Send us your original novel for consideration for production of a feature film or series. On selection earn 2000 points at 25 cents per point -current value (USD) and 4 percent of net profit on sale.Approximately $20,000 USD per 1 million USD of sale value.
+          </p>
+          <p className="text-lg md:text-xl leading-relaxed mb-6">
+            DECENTERALIASED STUDIOS is set-up as a community organisation, to be run my users through a Decentralised Autonomous Organisation. (DAO) ...Structured so that it can not be bought out by any corporations, or centralised institutions, without an eighty percent agreement of the DAO.
+          </p>
         </div>
 
         <Button
