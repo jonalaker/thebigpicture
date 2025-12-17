@@ -28,7 +28,7 @@ export default function Hero() {
             Sign up (underlined link to above sign up) to out DECENTRALISED STUDIO PORTAL. We will send you the novella: The AiGENT,  a free join-up gift - from the author.
           </p>
           <p className="text-lg md:text-xl leading-relaxed mb-6">
-            <h2>DECENTRALISED STUDIOS first job posting</h2>
+            <h2>DECENTRALISED STUDIOS <br></br>first job posting</h2>
             <br></br>
             Submit a screenplay, adapted from the novella THE AiGENT
             Screenplay can be produced with AI assistance. Full liberty is granted to change the novella as preferred. Earn 1000 studio points if your submission is selected, 1 point currently equals 25cents (USD).
