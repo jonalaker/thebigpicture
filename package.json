@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@google-cloud/discoveryengine": "^2.5.2",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.10.0",

@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import emailjs from "@emailjs/browser"
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -27,21 +28,34 @@ export default function Contact() {
     setStatus("loading")
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
+      /* 
+       * NOTE: You need to set the following environment variables in your .env.local file:
+       * NEXT_PUBLIC_EMAILJS_SERVICE_ID
+       * NEXT_PUBLIC_EMAILJS_TEMPLATE_ID
+       * NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
+       */
+      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID
+      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID
+      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY
 
-      if (response.ok) {
-        setStatus("success")
-        setStatusMessage("Thank you! We'll be in touch soon.")
-        setFormData({ fullName: "", email: "", message: "" })
-      } else {
-        const error = await response.json()
-        setStatus("error")
-        setStatusMessage(error.message || "Failed to send message. Please try again.")
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error("EmailJS environment variables are missing.")
       }
+
+      const templateParams = {
+        from_name: formData.fullName,
+        from_email: formData.email,
+        message: formData.message,
+        reply_to: formData.email,
+        to_name: "Admin", // You can customize this in your EmailJS template
+      }
+
+      await emailjs.send(serviceId, templateId, templateParams, publicKey)
+
+      setStatus("success")
+      setStatusMessage("Thank you! We'll be in touch soon.")
+      setFormData({ fullName: "", email: "", message: "" })
+
     } catch (error) {
       setStatus("error")
       setStatusMessage("An error occurred. Please try again later.")
