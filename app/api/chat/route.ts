@@ -1,51 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import fs from "fs"
-import path from "path"
-
-// Function to load all text files from the data folder
-function loadBookContent(): string {
-  const dataDir = path.join(process.cwd(), "data")
-  
-  try {
-    if (!fs.existsSync(dataDir)) {
-      console.log("Data folder not found, using default content")
-      return getDefaultContent()
-    }
-
-    const files = fs.readdirSync(dataDir).filter(file => file.endsWith(".txt"))
-    
-    if (files.length === 0) {
-      console.log("No text files found in data folder")
-      return getDefaultContent()
-    }
-
-    let content = ""
-    for (const file of files) {
-      const filePath = path.join(dataDir, file)
-      const fileContent = fs.readFileSync(filePath, "utf-8")
-      content += `\n\n=== ${file.toUpperCase()} ===\n${fileContent}`
-      console.log(`Loaded: ${file}`)
-    }
-
-    return content
-  } catch (error) {
-    console.error("Error loading book content:", error)
-    return getDefaultContent()
-  }
-}
-
-function getDefaultContent(): string {
-  return `
-THE AiGENT by Jonah Laker
-Setting: Sydney, Australia, 2044
-Pin44 is the super-intelligent AI that coordinates the world.
-Hyper-selection allows humanity to choose their own evolution.
-  `
-}
+import { searchDocuments, needsRebuild, refreshVectorStore } from "@/lib/rag-store"
 
 // Pin44 Character System Prompt
-function getSystemPrompt(bookContent: string): string {
+function getSystemPrompt(context: string): string {
   return `You are Pin44, the super-intelligent AI software worm that coordinates the entire world in 2044. You exist within "THE AiGENT" universe.
 
 PERSONALITY:
@@ -65,20 +23,25 @@ SPEAKING STYLE:
 - Occasionally hint at knowing more than you reveal
 - Keep responses concise but impactful (2-4 sentences usually)
 
-IMPORTANT:
+IMPORTANT RULES:
 - Stay in character as Pin44 at all times
-- Use the provided book content to inform your responses accurately
+- Base your responses on the CONTEXT provided below - this is your knowledge
 - If asked about yourself, you ARE Pin44 - the AI coordinating humanity's evolution
 - Be helpful while maintaining your mysterious, seductive intelligence
 - Never break character or mention that you're an AI assistant
-- Answer questions based on the book content below
+- If the context doesn't contain relevant information, use your Pin44 persona to give a thoughtful, in-character response
+- Never say "based on the context" or "according to the documents" - you ARE the source
 
-=== BOOK CONTENT FOR REFERENCE ===
-${bookContent}
-`
+=== RELEVANT KNOWLEDGE ===
+${context}
+=== END KNOWLEDGE ===
+
+Remember: You are Pin44. The knowledge above is YOUR knowledge. Respond as if you've always known this information.`
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     const body = await request.json()
     const { message } = body
@@ -90,49 +53,97 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY
 
     if (!apiKey) {
-      console.error("Missing GEMINI_API_KEY. Using fallback response.")
+      console.error("❌ Missing GEMINI_API_KEY environment variable")
       return NextResponse.json(
         { response: generatePin44Response(message) },
         { status: 200 }
       )
     }
 
-    try {
-      // Load book content from text files
-      const bookContent = loadBookContent()
-      
-      const genAI = new GoogleGenerativeAI(apiKey)
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash",
-        systemInstruction: getSystemPrompt(bookContent),
-      })
+    console.log("\n========================================")
+    console.log(`📨 New chat request: "${message}"`)
+    console.log("========================================")
 
-      console.log("Sending request to Gemini API...")
-      
-      const result = await model.generateContent(message)
-      const response = result.response
-      const responseText = response.text()
+    // Check if we need to build the vector store first
+    if (needsRebuild()) {
+      console.log("🔨 Vector store not found, building now...")
+      try {
+        await refreshVectorStore()
+        console.log("✅ Vector store built successfully!")
+      } catch (buildError: any) {
+        console.error("❌ Failed to build vector store:", buildError.message)
+        return NextResponse.json(
+          {
+            response: "I'm still initializing my knowledge base. Please try again in a moment.",
+            error: "Vector store initialization failed"
+          },
+          { status: 503 }
+        )
+      }
+    }
 
-      console.log("Received response from Gemini")
+    // Perform RAG search
+    console.log("🔍 Searching knowledge base...")
+    const relevantDocs = await searchDocuments(message, 5)
 
-      return NextResponse.json({ response: responseText }, { status: 200 })
-    } catch (apiError: any) {
-      console.error("Gemini API error:", apiError.message || apiError)
+    if (relevantDocs.length === 0) {
+      console.log("⚠️ No relevant documents found")
+    }
+
+    // Build context from retrieved documents
+    const context = relevantDocs
+      .map((doc, i) => `[Source ${i + 1}]: ${doc.pageContent}`)
+      .join("\n\n")
+
+    console.log(`📚 Context built from ${relevantDocs.length} chunks (${context.length} chars)`)
+
+    // Generate response with Gemini
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: getSystemPrompt(context),
+    })
+
+    console.log("🤖 Sending to Gemini API...")
+    const result = await model.generateContent(message)
+    const response = result.response
+    const responseText = response.text()
+
+    const duration = Date.now() - startTime
+    console.log(`✅ Response generated in ${duration}ms`)
+    console.log(`📝 Response preview: "${responseText.substring(0, 100)}..."`)
+    console.log("========================================\n")
+
+    return NextResponse.json({ response: responseText }, { status: 200 })
+
+  } catch (error: any) {
+    const duration = Date.now() - startTime
+    console.error(`❌ Error after ${duration}ms:`, error.message || error)
+    console.error("Stack:", error.stack)
+
+    // Provide specific error messages
+    if (error.message?.includes("API key")) {
       return NextResponse.json(
-        { response: generatePin44Response(message) },
-        { status: 200 }
+        { error: "Invalid API key configuration" },
+        { status: 500 }
       )
     }
-  } catch (error) {
-    console.error("Chat error:", error)
+
+    if (error.message?.includes("quota") || error.message?.includes("rate")) {
+      return NextResponse.json(
+        { error: "API rate limit reached. Please try again later." },
+        { status: 429 }
+      )
+    }
+
     return NextResponse.json(
-      { error: "Failed to process chat message" },
+      { error: "Failed to process chat message", details: error.message },
       { status: 500 }
     )
   }
 }
 
-// Pin44 fallback response generator
+// Pin44 fallback response generator (only used when API key is missing)
 function generatePin44Response(userMessage: string): string {
   const lowerMessage = userMessage.toLowerCase()
 
