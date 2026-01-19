@@ -195,10 +195,9 @@ export function AirdropClaim() {
         setError(null);
 
         try {
-            // Request signature
+            // Request signature - domain must match backend exactly
             const domain = {
                 ...EIP712_DOMAIN,
-                verifyingContract: undefined, // Will be set by backend
             };
 
             const claimData = {

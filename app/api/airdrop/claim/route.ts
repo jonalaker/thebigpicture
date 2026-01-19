@@ -106,10 +106,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verify EIP-712 signature
+        // Verify EIP-712 signature - domain must match frontend exactly
         const domain = {
             ...EIP712_DOMAIN,
-            verifyingContract: AIRDROP_CONFIG.TOKEN_ADDRESS as `0x${string}`,
         };
 
         const claimData = {
