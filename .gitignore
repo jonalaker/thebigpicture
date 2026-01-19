@@ -9,7 +9,8 @@ out/
 .env
 .env.local
 .env.production.local
-
+.env.airdrop.
+.env.example
 # Sensitive files
 service-account-key.json
 *.pem
@@ -25,3 +26,6 @@ npm-debug.log*
 .vscode/
 
 # Vector Store
+
+# Airdrop claims data (sensitive)
+data/airdrop-claims.json
