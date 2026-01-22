@@ -1,0 +1,23 @@
+{
+    "name": "pinn44-contracts",
+    "version": "1.0.0",
+    "description": "PINN44 DApp Smart Contracts",
+    "scripts": {
+        "compile": "hardhat compile",
+        "test": "hardhat test",
+        "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+        "deploy:amoy": "hardhat run scripts/deploy.ts --network polygon_amoy",
+        "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
+        "node": "hardhat node",
+        "verify": "hardhat verify"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+        "@openzeppelin/contracts": "^5.0.1",
+        "hardhat": "^2.19.4",
+        "dotenv": "^16.3.1"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
