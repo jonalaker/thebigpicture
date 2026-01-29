@@ -1,22 +1,40 @@
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Next.js
 .next/
 out/
+build/
+dist/
 
-# Environment variables
+# Production
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment variables - NEVER commit these!
 .env
-.env.local
-.env.production.local
-.env.airdrop.
+.env.*
 .env.example
-# Sensitive files
-service-account-key.json
-*.pem
+.env.airdrop.example
 
-# Debug
+# Local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Sensitive files - CRITICAL: never commit!
+*.pem
+*.key
+*private*key*
+service-account-key.json
+
+# Debug logs
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Vercel
 .vercel
@@ -24,8 +42,30 @@ npm-debug.log*
 # IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
-# Vector Store
+# OS files
+.DS_Store
+Thumbs.db
 
-# Airdrop claims data (sensitive)
+# Hardhat / Contracts
+contracts/node_modules/
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+contracts/deploy_*.txt
+contracts/deployment.json
+
+# Airdrop data (potentially sensitive)
 data/airdrop-claims.json
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.log
+*.tmp
+*.temp

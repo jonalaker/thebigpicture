@@ -1,413 +1,464 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ethers } from 'ethers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, XCircle, Wallet, ExternalLink, Gift, Shield, Zap } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Wallet, ExternalLink, Gift, Shield, Zap, TreePine, Lock, Info, AlertTriangle } from 'lucide-react';
+import { useWallet } from '@/hooks/useWallet';
+import { useMerkleDistributor, usePINN44Token } from '@/hooks/useContracts';
+import { getExplorerTxUrl, CONTRACTS_CONFIG } from '@/lib/contracts';
 
-declare global {
-    interface Window {
-        ethereum?: {
-            isMetaMask?: boolean;
-            request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-            on: (event: string, callback: (params: unknown) => void) => void;
-            removeListener: (event: string, callback: (params: unknown) => void) => void;
-        };
-    }
+interface MerkleProof {
+    index: number;
+    amount: string;
+    proof: string[];
 }
 
 interface ClaimStatus {
-    address: string;
+    eligible: boolean;
     claimed: boolean;
-    nonce: number;
-    airdropAmount: string;
-    chainId: number;
-    chainName: string;
-}
-
-interface ClaimResult {
-    success: boolean;
-    message: string;
-    txHash: string;
     amount: string;
-    explorerUrl: string;
+    index: number;
+    proof: string[];
 }
 
-const EIP712_DOMAIN = {
-    name: 'PINN44 Airdrop',
-    version: '1',
-    chainId: 137, // Polygon
-};
-
-const CLAIM_TYPES = {
-    Claim: [
-        { name: 'recipient', type: 'address' },
-        { name: 'nonce', type: 'uint256' },
-        { name: 'message', type: 'string' },
-    ],
-};
-
-const CLAIM_MESSAGE = 'I am claiming my PINN44 airdrop tokens. This signature proves I own this wallet.';
-
-const POLYGON_CHAIN_ID = '0x89'; // 137 in hex
+// Constants matching the MerkleDistributor contract
+const IMMEDIATE_PERCENTAGE = 10;
+const LOCKED_PERCENTAGE = 90;
+const LOCK_DURATION_MONTHS = 6;
 
 export function AirdropClaim() {
-    const [isConnecting, setIsConnecting] = useState(false);
-    const [isClaiming, setIsClaiming] = useState(false);
-    const [walletAddress, setWalletAddress] = useState<string | null>(null);
+    const {
+        address,
+        isConnected,
+        isConnecting,
+        isCorrectNetwork,
+        isMetaMaskAvailable,
+        connect,
+        switchToPolygon,
+        formatAddress,
+        error: walletError,
+    } = useWallet();
+
+    const merkleDistributor = useMerkleDistributor();
+    const token = usePINN44Token();
+
     const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
-    const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
+    const [txHash, setTxHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [chainId, setChainId] = useState<string | null>(null);
+    const [tokenBalance, setTokenBalance] = useState<string>('0');
+    const [currentEpoch, setCurrentEpoch] = useState<number>(0);
 
-    // Check if wallet is on Polygon network
-    const isOnPolygon = chainId === POLYGON_CHAIN_ID;
+    // Calculate immediate and locked amounts
+    const calculateAmounts = (totalAmount: string) => {
+        const total = parseFloat(totalAmount);
+        const immediate = (total * IMMEDIATE_PERCENTAGE) / 100;
+        const locked = (total * LOCKED_PERCENTAGE) / 100;
+        return { immediate, locked, total };
+    };
 
-    // Fetch claim status for connected wallet
-    const fetchClaimStatus = useCallback(async (address: string) => {
+    // Fetch user's merkle proof from API
+    const fetchMerkleProof = useCallback(async (userAddress: string): Promise<MerkleProof | null> => {
         try {
-            const response = await fetch(`/api/airdrop/claim?address=${address}`);
-            const data = await response.json();
-            if (response.ok) {
-                setClaimStatus(data);
+            const response = await fetch(`/api/airdrop/merkle-proofs?address=${userAddress}`);
+            if (!response.ok) {
+                if (response.status === 404) return null;
+                throw new Error('Failed to fetch merkle proof');
             }
+            return await response.json();
         } catch (err) {
-            console.error('Failed to fetch claim status:', err);
+            console.error('Error fetching merkle proof:', err);
+            return null;
         }
     }, []);
 
-    // Handle account changes
-    useEffect(() => {
-        if (!window.ethereum) return;
+    // Check claim status
+    const checkClaimStatus = useCallback(async () => {
+        if (!address || !isCorrectNetwork) return;
 
-        const handleAccountsChanged = (accounts: unknown) => {
-            const accountsArr = accounts as string[];
-            if (accountsArr.length === 0) {
-                setWalletAddress(null);
-                setClaimStatus(null);
-                setClaimResult(null);
-            } else {
-                setWalletAddress(accountsArr[0]);
-                setClaimResult(null);
-                setError(null);
-                fetchClaimStatus(accountsArr[0]);
-            }
-        };
-
-        const handleChainChanged = (newChainId: unknown) => {
-            setChainId(newChainId as string);
-        };
-
-        window.ethereum.on('accountsChanged', handleAccountsChanged);
-        window.ethereum.on('chainChanged', handleChainChanged);
-
-        // Check if already connected
-        window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
-            const accountsArr = accounts as string[];
-            if (accountsArr.length > 0) {
-                setWalletAddress(accountsArr[0]);
-                fetchClaimStatus(accountsArr[0]);
-            }
-        });
-
-        // Get current chain
-        window.ethereum.request({ method: 'eth_chainId' }).then((id) => {
-            setChainId(id as string);
-        });
-
-        return () => {
-            window.ethereum?.removeListener('accountsChanged', handleAccountsChanged);
-            window.ethereum?.removeListener('chainChanged', handleChainChanged);
-        };
-    }, [fetchClaimStatus]);
-
-    // Connect wallet
-    const connectWallet = async () => {
-        if (!window.ethereum) {
-            setError('Please install MetaMask or another Web3 wallet');
-            return;
-        }
-
-        setIsConnecting(true);
+        setIsLoading(true);
         setError(null);
 
         try {
-            const accounts = await window.ethereum.request({
-                method: 'eth_requestAccounts',
-            }) as string[];
+            // Get current epoch
+            const epoch = await merkleDistributor.getCurrentEpoch();
+            setCurrentEpoch(Number(epoch));
 
-            if (accounts.length > 0) {
-                setWalletAddress(accounts[0]);
-                fetchClaimStatus(accounts[0]);
+            // Fetch merkle proof for user
+            const proofData = await fetchMerkleProof(address);
+
+            if (!proofData) {
+                setClaimStatus({
+                    eligible: false,
+                    claimed: false,
+                    amount: '0',
+                    index: 0,
+                    proof: [],
+                });
+                return;
             }
-        } catch (err) {
-            console.error('Failed to connect wallet:', err);
-            setError('Failed to connect wallet. Please try again.');
-        } finally {
-            setIsConnecting(false);
-        }
-    };
 
-    // Switch to Polygon network
-    const switchToPolygon = async () => {
-        if (!window.ethereum) return;
+            // Check if already claimed
+            const claimed = await merkleDistributor.isClaimed(Number(epoch), proofData.index);
 
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: POLYGON_CHAIN_ID }],
+            setClaimStatus({
+                eligible: true,
+                claimed,
+                amount: proofData.amount,
+                index: proofData.index,
+                proof: proofData.proof,
             });
-        } catch (switchError: unknown) {
-            // Chain not added, try to add it
-            const err = switchError as { code?: number };
-            if (err.code === 4902) {
-                try {
-                    await window.ethereum.request({
-                        method: 'wallet_addEthereumChain',
-                        params: [
-                            {
-                                chainId: POLYGON_CHAIN_ID,
-                                chainName: 'Polygon Mainnet',
-                                nativeCurrency: {
-                                    name: 'MATIC',
-                                    symbol: 'MATIC',
-                                    decimals: 18,
-                                },
-                                rpcUrls: ['https://polygon-rpc.com'],
-                                blockExplorerUrls: ['https://polygonscan.com'],
-                            },
-                        ],
-                    });
-                } catch (addError) {
-                    console.error('Failed to add Polygon network:', addError);
-                    setError('Failed to add Polygon network to wallet');
-                }
-            }
+
+            // Also fetch token balance
+            const balance = await token.getBalance();
+            setTokenBalance(ethers.formatEther(balance));
+        } catch (err) {
+            console.error('Error checking claim status:', err);
+            setError('Failed to check eligibility. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-    };
+    }, [address, isCorrectNetwork, merkleDistributor, token, fetchMerkleProof]);
 
     // Claim airdrop
     const claimAirdrop = async () => {
-        if (!window.ethereum || !walletAddress || !claimStatus) return;
+        if (!address || !claimStatus?.eligible || claimStatus.claimed || !merkleDistributor.contract) {
+            return;
+        }
 
         setIsClaiming(true);
         setError(null);
 
         try {
-            // Request signature - domain must match backend exactly
-            const domain = {
-                ...EIP712_DOMAIN,
-            };
+            const amount = ethers.parseEther(claimStatus.amount);
 
-            const claimData = {
-                recipient: walletAddress,
-                nonce: claimStatus.nonce,
-                message: CLAIM_MESSAGE,
-            };
+            // Claim tokens via MerkleDistributor
+            const receipt = await merkleDistributor.claim(
+                currentEpoch,
+                claimStatus.index,
+                address,
+                amount,
+                claimStatus.proof
+            );
 
-            // Create EIP-712 typed data
-            const msgParams = JSON.stringify({
-                types: {
-                    EIP712Domain: [
-                        { name: 'name', type: 'string' },
-                        { name: 'version', type: 'string' },
-                        { name: 'chainId', type: 'uint256' },
-                    ],
-                    ...CLAIM_TYPES,
-                },
-                primaryType: 'Claim',
-                domain,
-                message: claimData,
-            });
+            setTxHash(receipt.hash);
 
-            // Request signature from wallet
-            const signature = await window.ethereum.request({
-                method: 'eth_signTypedData_v4',
-                params: [walletAddress, msgParams],
-            }) as string;
+            // Update status
+            setClaimStatus(prev => prev ? { ...prev, claimed: true } : null);
 
-            // Submit claim to backend
-            const response = await fetch('/api/airdrop/claim', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    address: walletAddress,
-                    signature,
-                    nonce: claimStatus.nonce,
-                }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to claim airdrop');
+            // Refresh balance
+            const newBalance = await token.getBalance();
+            setTokenBalance(ethers.formatEther(newBalance));
+        } catch (err: unknown) {
+            console.error('Claim error:', err);
+            const message = err instanceof Error ? err.message : 'Failed to claim tokens';
+            if (message.includes('user rejected')) {
+                setError('Transaction rejected by user');
+            } else if (message.includes('Already claimed')) {
+                setError('You have already claimed this airdrop');
+                setClaimStatus(prev => prev ? { ...prev, claimed: true } : null);
+            } else {
+                setError(message);
             }
-
-            setClaimResult(result);
-            setClaimStatus((prev) => prev ? { ...prev, claimed: true } : null);
-        } catch (err) {
-            console.error('Claim failed:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Failed to claim airdrop';
-            setError(errorMessage);
         } finally {
             setIsClaiming(false);
         }
     };
 
-    // Format address for display
-    const formatAddress = (address: string) => {
-        return `${address.slice(0, 6)}...${address.slice(-4)}`;
-    };
+    // Check status when wallet connects or network changes
+    useEffect(() => {
+        if (isConnected && isCorrectNetwork && address) {
+            checkClaimStatus();
+        }
+    }, [isConnected, isCorrectNetwork, address, checkClaimStatus]);
+
+    // Contract not configured
+    if (!CONTRACTS_CONFIG.MERKLE_DISTRIBUTOR) {
+        return (
+            <section className="py-20 px-4 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 min-h-[80vh] flex items-center">
+                <div className="max-w-2xl mx-auto w-full">
+                    <Card className="border-yellow-500/50 bg-black/60 backdrop-blur-lg">
+                        <CardHeader className="text-center">
+                            <Gift className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+                            <CardTitle className="text-3xl font-bold text-white">PINN44 Airdrop</CardTitle>
+                            <CardDescription className="text-yellow-200">
+                                Airdrop contract not yet deployed. Please check back later.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </div>
+            </section>
+        );
+    }
+
+    const amounts = claimStatus ? calculateAmounts(claimStatus.amount) : null;
 
     return (
-        <section className="py-20 px-4 bg-gradient-to-b from-background via-card to-background">
-            <div className="max-w-lg mx-auto">
-                {/* Main Card */}
-                <Card className="bg-card/80 backdrop-blur-xl border-primary/30 shadow-2xl shadow-primary/10">
-                    <CardHeader className="text-center pb-2">
-                        <div className="mx-auto mb-4 w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 animate-pulse">
-                            <Gift className="w-10 h-10 text-primary-foreground" />
+        <section className="py-20 px-4 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 min-h-[80vh] flex items-center">
+            <div className="max-w-2xl mx-auto w-full">
+                <Card className="border-purple-500/50 bg-black/60 backdrop-blur-lg">
+                    <CardHeader className="text-center">
+                        <div className="relative">
+                            <Gift className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-pulse" />
+                            <TreePine className="w-6 h-6 absolute top-0 right-1/3 text-green-400" />
                         </div>
-                        <CardTitle className="text-3xl font-bold text-primary font-serif">PINN44 Airdrop</CardTitle>
-                        <CardDescription className="text-muted-foreground text-lg">
-                            Claim your free 100 PINN44 tokens!
+                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            PINN44 Merkle Airdrop
+                        </CardTitle>
+                        <CardDescription className="text-gray-300">
+                            Claim your PINN44 tokens with locked distribution
                         </CardDescription>
                     </CardHeader>
 
                     <CardContent className="space-y-6">
+                        {/* Lock Mechanism Info Banner */}
+                        <Alert className="bg-blue-900/20 border-blue-500/50">
+                            <Info className="h-4 w-4 text-blue-400" />
+                            <AlertTitle className="text-blue-400">Locked Token Distribution</AlertTitle>
+                            <AlertDescription className="text-gray-300 space-y-2">
+                                <p>Airdrop tokens are distributed with anti-dump protection:</p>
+                                <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                                    <li><strong className="text-green-400">10% Immediate</strong> — Available instantly</li>
+                                    <li><strong className="text-purple-400">90% Locked</strong> — Unlocks after 6 months OR first contribution</li>
+                                </ul>
+                            </AlertDescription>
+                        </Alert>
+
                         {/* Features */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="flex items-center gap-2 text-muted-foreground text-sm bg-muted/50 rounded-lg p-3 border border-border">
-                                <Zap className="w-4 h-4 text-accent" />
-                                <span>Gasless Claim</span>
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div className="text-center p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                <TreePine className="w-6 h-6 mx-auto mb-2 text-green-400" />
+                                <p className="text-xs text-gray-400">Merkle Verified</p>
                             </div>
-                            <div className="flex items-center gap-2 text-muted-foreground text-sm bg-muted/50 rounded-lg p-3 border border-border">
-                                <Shield className="w-4 h-4 text-chart-5" />
-                                <span>Secure & Verified</span>
+                            <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                <Lock className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+                                <p className="text-xs text-gray-400">Anti-Dump Lock</p>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                                <Zap className="w-6 h-6 mx-auto mb-2 text-pink-400" />
+                                <p className="text-xs text-gray-400">Gas Efficient</p>
                             </div>
                         </div>
 
-                        {/* Error Alert */}
-                        {error && (
-                            <Alert variant="destructive" className="bg-destructive/20 border-destructive/50 text-destructive-foreground">
+                        {/* Error Display */}
+                        {(error || walletError) && (
+                            <Alert variant="destructive" className="bg-red-900/20 border-red-500/50">
                                 <XCircle className="h-4 w-4" />
                                 <AlertTitle>Error</AlertTitle>
-                                <AlertDescription>{error}</AlertDescription>
+                                <AlertDescription>{error || walletError}</AlertDescription>
                             </Alert>
                         )}
 
-                        {/* Success Alert */}
-                        {claimResult && (
-                            <Alert className="bg-chart-5/20 border-chart-5/50 text-foreground">
-                                <CheckCircle2 className="h-4 w-4 text-chart-5" />
-                                <AlertTitle className="text-chart-5">Success!</AlertTitle>
-                                <AlertDescription className="space-y-2">
-                                    <p>You&apos;ve received {claimResult.amount} PINN44 tokens!</p>
+                        {/* Success - Just Claimed */}
+                        {txHash && amounts && (
+                            <Alert className="bg-green-900/20 border-green-500/50">
+                                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                                <AlertTitle className="text-green-400">Tokens Claimed!</AlertTitle>
+                                <AlertDescription className="text-green-200 space-y-2">
+                                    <div className="grid grid-cols-2 gap-4 mt-2">
+                                        <div className="p-2 rounded bg-green-900/30">
+                                            <p className="text-xs text-gray-400">Received Now</p>
+                                            <p className="text-lg font-bold text-green-400">{amounts.immediate.toLocaleString()} PINN44</p>
+                                        </div>
+                                        <div className="p-2 rounded bg-purple-900/30">
+                                            <p className="text-xs text-gray-400">Locked (6 months)</p>
+                                            <p className="text-lg font-bold text-purple-400">{amounts.locked.toLocaleString()} PINN44</p>
+                                        </div>
+                                    </div>
                                     <a
-                                        href={claimResult.explorerUrl}
+                                        href={getExplorerTxUrl(txHash)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-primary hover:text-accent underline transition-colors"
+                                        className="inline-flex items-center gap-1 text-green-400 hover:underline mt-2"
                                     >
-                                        View on PolygonScan
-                                        <ExternalLink className="w-3 h-3" />
+                                        View transaction <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </AlertDescription>
                             </Alert>
                         )}
 
-                        {/* Already Claimed */}
-                        {claimStatus?.claimed && !claimResult && (
-                            <Alert className="bg-accent/20 border-accent/50 text-foreground">
-                                <CheckCircle2 className="h-4 w-4 text-accent" />
-                                <AlertTitle className="text-accent">Already Claimed</AlertTitle>
-                                <AlertDescription>
-                                    This wallet has already claimed the airdrop.
-                                </AlertDescription>
-                            </Alert>
+                        {/* Wallet Not Connected */}
+                        {!isConnected && (
+                            <div className="text-center space-y-4">
+                                <p className="text-gray-400">Connect your wallet to check eligibility</p>
+                                <Button
+                                    onClick={connect}
+                                    disabled={isConnecting || !isMetaMaskAvailable}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                                >
+                                    {isConnecting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Connecting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wallet className="mr-2 h-4 w-4" />
+                                            {isMetaMaskAvailable ? 'Connect MetaMask' : 'Install MetaMask'}
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         )}
 
-                        {/* Wallet Connection Status */}
-                        {walletAddress && (
-                            <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground text-sm">Connected Wallet</span>
-                                    <span className="text-primary font-mono text-sm">{formatAddress(walletAddress)}</span>
+                        {/* Wrong Network */}
+                        {isConnected && !isCorrectNetwork && (
+                            <div className="text-center space-y-4">
+                                <Alert className="bg-yellow-900/20 border-yellow-500/50">
+                                    <AlertTitle className="text-yellow-400">Wrong Network</AlertTitle>
+                                    <AlertDescription className="text-yellow-200">
+                                        Please switch to the correct network to claim your tokens.
+                                    </AlertDescription>
+                                </Alert>
+                                <Button
+                                    onClick={switchToPolygon}
+                                    className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                                >
+                                    Switch Network
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Connected & Correct Network */}
+                        {isConnected && isCorrectNetwork && (
+                            <div className="space-y-4">
+                                {/* Wallet Info */}
+                                <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-400">Connected Wallet</span>
+                                        <span className="text-white font-mono">{formatAddress(address!)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                        <span className="text-gray-400">PINN44 Balance</span>
+                                        <span className="text-purple-400 font-semibold">{parseFloat(tokenBalance).toLocaleString()} PINN44</span>
+                                    </div>
                                 </div>
-                                {!isOnPolygon && (
-                                    <div className="mt-3">
+
+                                {/* Loading State */}
+                                {isLoading && (
+                                    <div className="text-center py-8">
+                                        <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-400" />
+                                        <p className="text-gray-400 mt-2">Checking eligibility...</p>
+                                    </div>
+                                )}
+
+                                {/* Not Eligible */}
+                                {!isLoading && claimStatus && !claimStatus.eligible && (
+                                    <Alert className="bg-gray-800/50 border-gray-600">
+                                        <AlertTitle className="text-gray-300">Not Eligible</AlertTitle>
+                                        <AlertDescription className="text-gray-400">
+                                            This wallet address is not included in the current airdrop. Check back for future distributions.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+
+                                {/* Eligible but Already Claimed */}
+                                {!isLoading && claimStatus?.eligible && claimStatus.claimed && !txHash && amounts && (
+                                    <div className="space-y-4">
+                                        <Alert className="bg-blue-900/20 border-blue-500/50">
+                                            <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                                            <AlertTitle className="text-blue-400">Already Claimed</AlertTitle>
+                                            <AlertDescription className="text-blue-200">
+                                                You have already claimed your airdrop tokens for this epoch.
+                                            </AlertDescription>
+                                        </Alert>
+
+                                        {/* Locked Token Status */}
+                                        <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Lock className="w-5 h-5 text-purple-400" />
+                                                <span className="font-semibold text-purple-400">Your Locked Tokens</span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-xs text-gray-400">Received</p>
+                                                    <p className="text-lg font-bold text-green-400">{amounts.immediate.toLocaleString()} PINN44</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400">Locked</p>
+                                                    <p className="text-lg font-bold text-purple-400">{amounts.locked.toLocaleString()} PINN44</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 p-3 rounded bg-gray-800/50 border border-gray-700">
+                                                <p className="text-sm text-gray-300">
+                                                    <strong>Unlock Conditions:</strong>
+                                                </p>
+                                                <ul className="text-xs text-gray-400 mt-1 space-y-1">
+                                                    <li>✓ Complete your first contribution, OR</li>
+                                                    <li>✓ Wait 6 months from claim date</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        {/* Early Unlock Warning */}
+                                        <Alert className="bg-yellow-900/20 border-yellow-500/50">
+                                            <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                                            <AlertTitle className="text-yellow-400">Early Unlock Penalty</AlertTitle>
+                                            <AlertDescription className="text-yellow-200 text-sm">
+                                                Unlocking before conditions are met incurs a <strong>20% penalty</strong>.
+                                                Visit the <strong>Contributor Vault</strong> to manage your locked tokens.
+                                            </AlertDescription>
+                                        </Alert>
+                                    </div>
+                                )}
+
+                                {/* Eligible and Can Claim */}
+                                {!isLoading && claimStatus?.eligible && !claimStatus.claimed && amounts && (
+                                    <div className="space-y-4">
+                                        <div className="p-4 rounded-lg bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30">
+                                            <div className="text-center mb-4">
+                                                <p className="text-gray-400 text-sm">Total Airdrop Allocation</p>
+                                                <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                                    {amounts.total.toLocaleString()} PINN44
+                                                </p>
+                                            </div>
+
+                                            {/* Breakdown */}
+                                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                                <div className="p-3 rounded-lg bg-green-900/30 border border-green-500/30 text-center">
+                                                    <p className="text-xs text-gray-400">Immediate (10%)</p>
+                                                    <p className="text-xl font-bold text-green-400">{amounts.immediate.toLocaleString()}</p>
+                                                    <p className="text-xs text-green-300">Available now</p>
+                                                </div>
+                                                <div className="p-3 rounded-lg bg-purple-900/30 border border-purple-500/30 text-center">
+                                                    <p className="text-xs text-gray-400">Locked (90%)</p>
+                                                    <p className="text-xl font-bold text-purple-400">{amounts.locked.toLocaleString()}</p>
+                                                    <p className="text-xs text-purple-300">6 months lock</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <Button
-                                            onClick={switchToPolygon}
-                                            variant="outline"
-                                            className="w-full bg-secondary/20 border-secondary/50 text-secondary hover:bg-secondary/30 hover:text-secondary-foreground transition-all"
+                                            onClick={claimAirdrop}
+                                            disabled={isClaiming}
+                                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-6 text-lg"
                                         >
-                                            Switch to Polygon Network
+                                            {isClaiming ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                    Claiming...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Gift className="mr-2 h-5 w-5" />
+                                                    Claim Tokens
+                                                </>
+                                            )}
                                         </Button>
+
+                                        <p className="text-xs text-center text-gray-500">
+                                            Note: You will pay a small gas fee. {amounts.immediate.toLocaleString()} PINN44 will be available immediately.
+                                        </p>
                                     </div>
                                 )}
                             </div>
                         )}
-
-                        {/* Action Button */}
-                        {!walletAddress ? (
-                            <Button
-                                onClick={connectWallet}
-                                disabled={isConnecting}
-                                className="w-full h-14 text-lg bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-primary-foreground border-0 shadow-lg shadow-primary/30 transition-all duration-300 hover:shadow-primary/50 hover:scale-[1.02]"
-                            >
-                                {isConnecting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        Connecting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Wallet className="mr-2 h-5 w-5" />
-                                        Connect Wallet
-                                    </>
-                                )}
-                            </Button>
-                        ) : !isOnPolygon ? null : claimStatus?.claimed ? (
-                            <Button disabled className="w-full h-14 text-lg bg-muted border-border">
-                                <CheckCircle2 className="mr-2 h-5 w-5" />
-                                Already Claimed
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={claimAirdrop}
-                                disabled={isClaiming}
-                                className="w-full h-14 text-lg bg-gradient-to-r from-chart-5 to-accent hover:from-chart-5/80 hover:to-accent/80 text-accent-foreground border-0 shadow-lg shadow-chart-5/30 transition-all duration-300 hover:shadow-chart-5/50 hover:scale-[1.02]"
-                            >
-                                {isClaiming ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        Processing Claim...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Gift className="mr-2 h-5 w-5" />
-                                        Claim 100 PINN44 Tokens
-                                    </>
-                                )}
-                            </Button>
-                        )}
-
-                        {/* Network Info */}
-                        <p className="text-center text-muted-foreground text-xs">
-                            This airdrop is on <span className="text-secondary">Polygon Network (MATIC)</span>
-                        </p>
                     </CardContent>
                 </Card>
-
-                {/* Additional Info */}
-                <div className="mt-8 text-center">
-                    <p className="text-muted-foreground text-sm">
-                        Part of <span className="text-primary font-serif">The Big Picture</span> ecosystem
-                    </p>
-                </div>
             </div>
         </section>
     );

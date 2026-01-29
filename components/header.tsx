@@ -12,6 +12,9 @@ export default function Header() {
     { label: "About the Book", href: "/#about" },
     { label: "Author", href: "/#author" },
     { label: "Airdrop", href: "/airdrop" },
+    { label: "Staking", href: "/staking" },
+    { label: "Bounties", href: "/bounties" },
+    { label: "Vault", href: "/vault" },
     { label: "Contact", href: "/#contact" },
   ]
 

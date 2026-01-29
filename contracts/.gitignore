@@ -1,0 +1,26 @@
+# Hardhat files
+node_modules/
+cache/
+artifacts/
+typechain-types/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Deployment logs (may contain sensitive info)
+deploy_*.txt
+deployment.json
+
+# Coverage
+coverage/
+coverage.json
+
+# Debug
+debug.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
