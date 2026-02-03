@@ -5,10 +5,10 @@ import { ethers } from 'ethers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, XCircle, Wallet, ExternalLink, Gift, Lock, Info, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Wallet, ExternalLink, Gift, Lock, Info, AlertTriangle, Plus } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { usePINN44Token } from '@/hooks/useContracts';
-import { getExplorerTxUrl } from '@/lib/contracts';
+import { getExplorerTxUrl, CONTRACTS_CONFIG } from '@/lib/contracts';
 import { generateDeviceFingerprint, hasClaimedBefore, markAsClaimed } from '@/lib/fingerprint';
 
 // Constants matching the contract
@@ -46,6 +46,8 @@ export function AirdropClaim() {
     const [error, setError] = useState<string | null>(null);
     const [tokenBalance, setTokenBalance] = useState<string>('0');
     const [fingerprint, setFingerprint] = useState<string | null>(null);
+    const [isAddingToken, setIsAddingToken] = useState(false);
+    const [tokenAdded, setTokenAdded] = useState(false);
 
     // Calculate amounts
     const immediateAmount = (AIRDROP_AMOUNT * IMMEDIATE_PERCENTAGE) / 100;
@@ -138,6 +140,34 @@ export function AirdropClaim() {
         }
     };
 
+    // Add PINN44 token to MetaMask
+    const addTokenToMetaMask = async () => {
+        if (typeof window === 'undefined' || !window.ethereum) return;
+
+        setIsAddingToken(true);
+        try {
+            const wasAdded = await window.ethereum.request({
+                method: 'wallet_watchAsset',
+                params: {
+                    type: 'ERC20',
+                    options: {
+                        address: CONTRACTS_CONFIG.PINN44_TOKEN || process.env.NEXT_PUBLIC_PINN44_TOKEN_ADDRESS,
+                        symbol: 'PINN44',
+                        decimals: 18,
+                        image: '', // Optional: add token logo URL
+                    },
+                },
+            });
+            if (wasAdded) {
+                setTokenAdded(true);
+            }
+        } catch (err) {
+            console.error('Error adding token to MetaMask:', err);
+        } finally {
+            setIsAddingToken(false);
+        }
+    };
+
     // Check status when wallet connects
     useEffect(() => {
         if (isConnected && isCorrectNetwork && address && fingerprint) {
@@ -216,14 +246,32 @@ export function AirdropClaim() {
                                             <p className="text-lg font-bold text-purple-400">{lockedAmount} PINN44</p>
                                         </div>
                                     </div>
-                                    <a
-                                        href={getExplorerTxUrl(txHash)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 text-green-400 hover:underline mt-2"
-                                    >
-                                        View transaction <ExternalLink className="w-3 h-3" />
-                                    </a>
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        <a
+                                            href={getExplorerTxUrl(txHash)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/30 text-sm"
+                                        >
+                                            <ExternalLink className="w-3 h-3" />
+                                            View Transaction
+                                        </a>
+                                        <Button
+                                            onClick={addTokenToMetaMask}
+                                            disabled={isAddingToken || tokenAdded}
+                                            size="sm"
+                                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                                        >
+                                            {isAddingToken ? (
+                                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                            ) : tokenAdded ? (
+                                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                            ) : (
+                                                <Plus className="h-3 w-3 mr-1" />
+                                            )}
+                                            {tokenAdded ? 'Token Added!' : 'Add to MetaMask'}
+                                        </Button>
+                                    </div>
                                 </AlertDescription>
                             </Alert>
                         )}
