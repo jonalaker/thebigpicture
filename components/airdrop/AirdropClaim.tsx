@@ -151,10 +151,10 @@ export function AirdropClaim() {
                 params: {
                     type: 'ERC20',
                     options: {
-                        address: CONTRACTS_CONFIG.PINN44_TOKEN || process.env.NEXT_PUBLIC_PINN44_TOKEN_ADDRESS,
+                        address: CONTRACTS_CONFIG.PINN44_TOKEN || process.env.NEXT_PUBLIC_PINN44_TOKEN_ADDRESS || '',
                         symbol: 'PINN44',
                         decimals: 18,
-                        image: '', // Optional: add token logo URL
+                        image: '',
                     },
                 },
             });
@@ -377,6 +377,22 @@ export function AirdropClaim() {
                                                 Unlocking before conditions are met incurs a <strong>5% penalty</strong>.
                                             </AlertDescription>
                                         </Alert>
+
+                                        {/* Add to MetaMask button for already claimed users */}
+                                        <Button
+                                            onClick={addTokenToMetaMask}
+                                            disabled={isAddingToken || tokenAdded}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                                        >
+                                            {isAddingToken ? (
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : tokenAdded ? (
+                                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                            ) : (
+                                                <Plus className="h-4 w-4 mr-2" />
+                                            )}
+                                            {tokenAdded ? 'PINN44 Added to MetaMask!' : 'Add PINN44 to MetaMask'}
+                                        </Button>
                                     </div>
                                 )}
 
