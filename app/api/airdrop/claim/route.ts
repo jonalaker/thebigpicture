@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-// Claim tracking file
-const CLAIMS_FILE = path.join(process.cwd(), 'data', 'airdrop-claims.json');
 
 // Configuration
 const AIRDROP_AMOUNT = process.env.AIRDROP_AMOUNT || '100';
 const IMMEDIATE_PERCENTAGE = 10;
-const LOCKED_PERCENTAGE = 90;
 
 // StakingVesting ABI (only functions we need)
 const STAKING_VESTING_ABI = [
     'function createVestingSchedule(address beneficiary, uint256 amount, uint8 vestType) external',
+    'function vestingSchedules(address, uint256) view returns (uint256 totalAmount, uint256 startTime, uint256 cliffDuration, uint256 vestingDuration, uint256 claimed, uint8 vestType, bool contributionUnlocked)',
     'function token() view returns (address)',
 ];
 
@@ -24,73 +19,26 @@ const ERC20_ABI = [
     'function balanceOf(address account) view returns (uint256)',
 ];
 
-interface ClaimsData {
-    claims: {
-        [fingerprint: string]: {
-            address: string;
-            txHash: string;
-            timestamp: number;
-            ip: string;
-        };
-    };
-    walletClaims: {
-        [address: string]: boolean;
-    };
-}
+// In-memory cache for fingerprints (resets on cold start, but blockchain is the source of truth)
+const fingerprintCache = new Map<string, { address: string; timestamp: number }>();
 
-// Load claims data
-async function loadClaims(): Promise<ClaimsData> {
+// Check if wallet has any airdrop vesting schedule on-chain
+async function hasExistingAirdropSchedule(
+    stakingContract: ethers.Contract,
+    walletAddress: string
+): Promise<boolean> {
     try {
-        const data = await fs.readFile(CLAIMS_FILE, 'utf-8');
-        const parsed = JSON.parse(data);
-        // Ensure walletClaims exists
-        if (!parsed.walletClaims) {
-            parsed.walletClaims = {};
+        // Check first vesting schedule (index 0)
+        const schedule = await stakingContract.vestingSchedules(walletAddress, 0);
+        // If totalAmount > 0 and vestType == 2 (AIRDROP), they've already claimed
+        if (schedule.totalAmount > BigInt(0) && Number(schedule.vestType) === 2) {
+            return true;
         }
-        return parsed;
+        return false;
     } catch {
-        return { claims: {}, walletClaims: {} };
+        // No schedule exists
+        return false;
     }
-}
-
-// Save claims data
-async function saveClaims(data: ClaimsData): Promise<void> {
-    await fs.writeFile(CLAIMS_FILE, JSON.stringify(data, null, 2));
-}
-
-// Check if fingerprint or wallet has already claimed
-async function hasAlreadyClaimed(fingerprint: string, walletAddress: string): Promise<{ claimed: boolean; reason?: string }> {
-    const claims = await loadClaims();
-
-    // Check fingerprint (device)
-    if (claims.claims[fingerprint]) {
-        return { claimed: true, reason: 'This device has already claimed the airdrop' };
-    }
-
-    // Check wallet address
-    const normalizedAddress = walletAddress.toLowerCase();
-    if (claims.walletClaims[normalizedAddress]) {
-        return { claimed: true, reason: 'This wallet has already claimed the airdrop' };
-    }
-
-    return { claimed: false };
-}
-
-// Record a claim
-async function recordClaim(fingerprint: string, walletAddress: string, txHash: string, ip: string): Promise<void> {
-    const claims = await loadClaims();
-    const normalizedAddress = walletAddress.toLowerCase();
-
-    claims.claims[fingerprint] = {
-        address: walletAddress,
-        txHash,
-        timestamp: Date.now(),
-        ip,
-    };
-
-    claims.walletClaims[normalizedAddress] = true;
-
-    await saveClaims(claims);
 }
 
 // Get client IP
@@ -120,12 +68,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if already claimed
-        const claimCheck = await hasAlreadyClaimed(fingerprint, walletAddress);
-        if (claimCheck.claimed) {
+        // Check in-memory fingerprint cache (quick check, not persistent)
+        if (fingerprintCache.has(fingerprint)) {
             return NextResponse.json(
-                { error: claimCheck.reason },
-                { status: 409 } // Conflict
+                { error: 'This device has already claimed the airdrop' },
+                { status: 409 }
             );
         }
 
@@ -136,9 +83,14 @@ export async function POST(request: NextRequest) {
         const stakingAddress = process.env.NEXT_PUBLIC_STAKING_VESTING_ADDRESS;
 
         if (!privateKey || !rpcUrl || !tokenAddress || !stakingAddress) {
-            console.error('Missing environment variables');
+            console.error('Missing environment variables:', {
+                hasPrivateKey: !!privateKey,
+                hasRpcUrl: !!rpcUrl,
+                hasTokenAddress: !!tokenAddress,
+                hasStakingAddress: !!stakingAddress,
+            });
             return NextResponse.json(
-                { error: 'Airdrop not configured' },
+                { error: 'Airdrop not configured. Please set environment variables.' },
                 { status: 503 }
             );
         }
@@ -151,6 +103,15 @@ export async function POST(request: NextRequest) {
         const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, relayerWallet);
         const stakingContract = new ethers.Contract(stakingAddress, STAKING_VESTING_ABI, relayerWallet);
 
+        // Check if wallet has already claimed ON-CHAIN (source of truth)
+        const hasSchedule = await hasExistingAirdropSchedule(stakingContract, walletAddress);
+        if (hasSchedule) {
+            return NextResponse.json(
+                { error: 'This wallet has already claimed the airdrop' },
+                { status: 409 }
+            );
+        }
+
         // Calculate amounts
         const totalAmount = ethers.parseEther(AIRDROP_AMOUNT);
         const immediateAmount = (totalAmount * BigInt(IMMEDIATE_PERCENTAGE)) / BigInt(100);
@@ -159,9 +120,9 @@ export async function POST(request: NextRequest) {
         // Check relayer has enough tokens
         const balance = await tokenContract.balanceOf(relayerWallet.address);
         if (balance < totalAmount) {
-            console.error('Relayer wallet has insufficient tokens');
+            console.error('Relayer wallet has insufficient tokens:', ethers.formatEther(balance));
             return NextResponse.json(
-                { error: 'Airdrop pool exhausted' },
+                { error: 'Airdrop pool exhausted. Please contact support.' },
                 { status: 503 }
             );
         }
@@ -185,9 +146,11 @@ export async function POST(request: NextRequest) {
         );
         await vestingTx.wait();
 
-        // Record the claim
-        const clientIP = getClientIP(request);
-        await recordClaim(fingerprint, walletAddress, transferReceipt.hash, clientIP);
+        // Cache fingerprint in memory
+        fingerprintCache.set(fingerprint, {
+            address: walletAddress,
+            timestamp: Date.now(),
+        });
 
         console.log(`Airdrop successful for ${walletAddress}. TX: ${transferReceipt.hash}`);
 
@@ -207,13 +170,20 @@ export async function POST(request: NextRequest) {
         // Handle specific errors
         if (message.includes('insufficient funds')) {
             return NextResponse.json(
-                { error: 'Relayer wallet has insufficient gas' },
+                { error: 'Relayer wallet has insufficient gas. Please contact support.' },
                 { status: 503 }
             );
         }
 
+        if (message.includes('execution reverted')) {
+            return NextResponse.json(
+                { error: 'Transaction failed. You may have already claimed or there is a contract issue.' },
+                { status: 400 }
+            );
+        }
+
         return NextResponse.json(
-            { error: 'Failed to process airdrop claim' },
+            { error: 'Failed to process airdrop claim. Please try again later.' },
             { status: 500 }
         );
     }
@@ -232,24 +202,34 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const claims = await loadClaims();
-
-    // Check fingerprint
-    if (fingerprint && claims.claims[fingerprint]) {
+    // Check fingerprint in memory cache
+    if (fingerprint && fingerprintCache.has(fingerprint)) {
         return NextResponse.json({
             claimed: true,
-            claimInfo: claims.claims[fingerprint],
+            reason: 'Device already claimed',
         });
     }
 
-    // Check wallet
+    // Check wallet on-chain if address provided
     if (walletAddress) {
-        const normalizedAddress = walletAddress.toLowerCase();
-        if (claims.walletClaims[normalizedAddress]) {
-            return NextResponse.json({
-                claimed: true,
-                reason: 'Wallet has already claimed',
-            });
+        try {
+            const rpcUrl = process.env.POLYGON_RPC_URL;
+            const stakingAddress = process.env.NEXT_PUBLIC_STAKING_VESTING_ADDRESS;
+
+            if (rpcUrl && stakingAddress) {
+                const provider = new ethers.JsonRpcProvider(rpcUrl);
+                const stakingContract = new ethers.Contract(stakingAddress, STAKING_VESTING_ABI, provider);
+
+                const hasSchedule = await hasExistingAirdropSchedule(stakingContract, walletAddress);
+                if (hasSchedule) {
+                    return NextResponse.json({
+                        claimed: true,
+                        reason: 'Wallet has already claimed',
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error checking on-chain status:', err);
         }
     }
 
