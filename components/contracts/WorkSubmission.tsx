@@ -882,12 +882,12 @@ export function WorkSubmissionComponent() {
 
                         {/* Submissions List */}
                         <div className="space-y-3">
-                            <h3 className="font-semibold">Submissions ({submissions.length})</h3>
-                            {submissions.length === 0 ? (
+                            <h3 className="font-semibold">Submissions ({submissions.filter(s => s.status !== 2).length})</h3>
+                            {submissions.filter(s => s.status !== 2).length === 0 ? (
                                 <p className="text-gray-400 text-sm">No submissions yet</p>
                             ) : (
                                 <div className="space-y-2">
-                                    {submissions.map((sub) => (
+                                    {submissions.filter(s => s.status !== 2).map((sub) => (
                                         <div
                                             key={sub.id}
                                             className={`p-3 rounded-lg border ${sub.status === 1
@@ -967,8 +967,8 @@ export function WorkSubmissionComponent() {
                                                                         disabled={isProcessing}
                                                                         className="text-red-400 hover:bg-red-900/20"
                                                                     >
-                                                                        <XCircle className="w-3 h-3 mr-1" />
-                                                                        Reject
+                                                                        <Trash2 className="w-3 h-3 mr-1" />
+                                                                        Remove
                                                                     </Button>
                                                                     {sub.stakeAmount > BigInt(0) && (
                                                                         <Button
