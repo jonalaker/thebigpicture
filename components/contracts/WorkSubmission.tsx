@@ -897,68 +897,95 @@ export function WorkSubmissionComponent() {
                                                     : 'bg-gray-800/50 border-gray-700'
                                                 }`}
                                         >
-                                            <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    {sub.thumbnailUri ? (
-                                                        <Image className="w-4 h-4 text-gray-400" />
-                                                    ) : (
-                                                        <FileText className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                    <span className="text-sm font-mono">{formatAddress(sub.submitter)}</span>
-                                                    <Badge className={SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.color || 'bg-gray-500'}>
-                                                        {SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.label || 'Unknown'}
-                                                    </Badge>
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
+                                            <div className="flex gap-3">
+                                                {/* Thumbnail Preview */}
+                                                {sub.thumbnailUri && (
                                                     <a
-                                                        href={sub.fileUri.startsWith('ipfs://')
-                                                            ? `https://ipfs.io/ipfs/${sub.fileUri.slice(7)}`
-                                                            : sub.fileUri}
+                                                        href={sub.thumbnailUri.startsWith('ipfs://')
+                                                            ? `https://gateway.pinata.cloud/ipfs/${sub.thumbnailUri.slice(7)}`
+                                                            : sub.thumbnailUri}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="text-blue-400 hover:underline text-sm flex items-center gap-1"
+                                                        className="shrink-0"
                                                     >
-                                                        View <ExternalLink className="w-3 h-3" />
+                                                        <img
+                                                            src={sub.thumbnailUri.startsWith('ipfs://')
+                                                                ? `https://gateway.pinata.cloud/ipfs/${sub.thumbnailUri.slice(7)}`
+                                                                : sub.thumbnailUri}
+                                                            alt="Submission thumbnail"
+                                                            className="w-16 h-16 object-cover rounded-lg border border-gray-600 hover:border-blue-400 transition-colors"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                            }}
+                                                        />
                                                     </a>
+                                                )}
 
-                                                    {/* Judge Actions */}
-                                                    {isJudge && sub.status === 0 && (selectedBounty.state === 0 || selectedBounty.state === 1) && (
-                                                        <>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => handleSelectWinner(selectedBounty.id, sub.id)}
-                                                                disabled={isProcessing}
-                                                                className="text-green-400 hover:bg-green-900/20"
-                                                            >
-                                                                <Trophy className="w-3 h-3 mr-1" />
-                                                                Winner
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                onClick={() => handleRejectSubmission(sub.id, false)}
-                                                                disabled={isProcessing}
-                                                                className="text-red-400 hover:bg-red-900/20"
-                                                            >
-                                                                <XCircle className="w-3 h-3 mr-1" />
-                                                                Reject
-                                                            </Button>
-                                                            {sub.stakeAmount > BigInt(0) && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    onClick={() => handleRejectSubmission(sub.id, true)}
-                                                                    disabled={isProcessing}
-                                                                    className="text-orange-400 hover:bg-orange-900/20"
-                                                                    title="Reject and slash stake"
-                                                                >
-                                                                    <Trash2 className="w-3 h-3" />
-                                                                </Button>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-center flex-wrap gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            {sub.thumbnailUri ? (
+                                                                <Image className="w-4 h-4 text-gray-400" />
+                                                            ) : (
+                                                                <FileText className="w-4 h-4 text-gray-400" />
                                                             )}
-                                                        </>
-                                                    )}
+                                                            <span className="text-sm font-mono">{formatAddress(sub.submitter)}</span>
+                                                            <Badge className={SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.color || 'bg-gray-500'}>
+                                                                {SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.label || 'Unknown'}
+                                                            </Badge>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2">
+                                                            <a
+                                                                href={sub.fileUri.startsWith('ipfs://')
+                                                                    ? `https://gateway.pinata.cloud/ipfs/${sub.fileUri.slice(7)}`
+                                                                    : sub.fileUri}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-400 hover:underline text-sm flex items-center gap-1"
+                                                            >
+                                                                View <ExternalLink className="w-3 h-3" />
+                                                            </a>
+
+                                                            {/* Judge Actions */}
+                                                            {isJudge && sub.status === 0 && (selectedBounty.state === 0 || selectedBounty.state === 1) && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() => handleSelectWinner(selectedBounty.id, sub.id)}
+                                                                        disabled={isProcessing}
+                                                                        className="text-green-400 hover:bg-green-900/20"
+                                                                    >
+                                                                        <Trophy className="w-3 h-3 mr-1" />
+                                                                        Winner
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() => handleRejectSubmission(sub.id, false)}
+                                                                        disabled={isProcessing}
+                                                                        className="text-red-400 hover:bg-red-900/20"
+                                                                    >
+                                                                        <XCircle className="w-3 h-3 mr-1" />
+                                                                        Reject
+                                                                    </Button>
+                                                                    {sub.stakeAmount > BigInt(0) && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            onClick={() => handleRejectSubmission(sub.id, true)}
+                                                                            disabled={isProcessing}
+                                                                            className="text-orange-400 hover:bg-orange-900/20"
+                                                                            title="Reject and slash stake"
+                                                                        >
+                                                                            <Trash2 className="w-3 h-3" />
+                                                                        </Button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
