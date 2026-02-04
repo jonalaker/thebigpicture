@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// NFT.storage API endpoint
-const NFT_STORAGE_API = 'https://api.nft.storage/upload';
+// Pinata API endpoint
+const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check file size (max 100MB for NFT.storage)
+        // Check file size (max 100MB)
         const maxSize = 100 * 1024 * 1024; // 100MB
         if (file.size > maxSize) {
             return NextResponse.json(
@@ -24,35 +24,58 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get API key from environment
-        const apiKey = process.env.NFT_STORAGE_API_KEY;
+        // Get Pinata API keys from environment
+        const pinataApiKey = process.env.PINATA_API_KEY;
+        const pinataSecretKey = process.env.PINATA_SECRET_KEY;
 
-        if (!apiKey) {
-            // If no API key, use a free public IPFS gateway (less reliable but works)
-            console.log('No NFT_STORAGE_API_KEY set, using fallback method');
-            return await uploadToPublicGateway(file);
+        if (!pinataApiKey || !pinataSecretKey) {
+            return NextResponse.json({
+                error: 'IPFS upload not configured. Please set PINATA_API_KEY and PINATA_SECRET_KEY in environment variables.',
+                instructions: 'Get your free API keys at https://pinata.cloud (1GB free storage)',
+            }, { status: 503 });
         }
 
-        // Upload to NFT.storage
-        const response = await fetch(NFT_STORAGE_API, {
+        // Create form data for Pinata
+        const pinataFormData = new FormData();
+        pinataFormData.append('file', file);
+
+        // Add metadata
+        const metadata = JSON.stringify({
+            name: file.name,
+            keyvalues: {
+                uploadedAt: new Date().toISOString(),
+                source: 'thebigpicture-bounties',
+            }
+        });
+        pinataFormData.append('pinataMetadata', metadata);
+
+        // Optional: Pin options
+        const options = JSON.stringify({
+            cidVersion: 1,
+        });
+        pinataFormData.append('pinataOptions', options);
+
+        // Upload to Pinata
+        const response = await fetch(PINATA_API_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
+                'pinata_api_key': pinataApiKey,
+                'pinata_secret_api_key': pinataSecretKey,
             },
-            body: file,
+            body: pinataFormData,
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('NFT.storage error:', errorText);
+            console.error('Pinata error:', errorText);
             return NextResponse.json(
-                { error: 'Failed to upload to IPFS' },
+                { error: 'Failed to upload to IPFS. Please try again.' },
                 { status: 500 }
             );
         }
 
         const result = await response.json();
-        const cid = result.value?.cid;
+        const cid = result.IpfsHash;
 
         if (!cid) {
             return NextResponse.json(
@@ -62,7 +85,7 @@ export async function POST(request: NextRequest) {
         }
 
         const ipfsUri = `ipfs://${cid}`;
-        const gatewayUrl = `https://nftstorage.link/ipfs/${cid}`;
+        const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
 
         return NextResponse.json({
             success: true,
@@ -79,50 +102,5 @@ export async function POST(request: NextRequest) {
             { error: 'Failed to process upload' },
             { status: 500 }
         );
-    }
-}
-
-// Fallback: Upload to a public IPFS pinning service
-async function uploadToPublicGateway(file: File): Promise<NextResponse> {
-    try {
-        // Use Filebase or another free pinning service
-        // For demo purposes, we'll use the ipfs.io API (limited but works)
-        const formData = new FormData();
-        formData.append('file', file);
-
-        // Try using Pinata's free public upload endpoint
-        const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-            method: 'POST',
-            headers: {
-                // No auth for demo - this won't work in production without API key
-            },
-            body: formData,
-        });
-
-        if (!response.ok) {
-            // If public gateway fails, return instructions
-            return NextResponse.json({
-                error: 'IPFS upload requires configuration. Please set NFT_STORAGE_API_KEY in environment variables.',
-                instructions: 'Get a free API key at https://nft.storage and add NFT_STORAGE_API_KEY to your .env file.',
-            }, { status: 503 });
-        }
-
-        const result = await response.json();
-        const cid = result.IpfsHash;
-
-        return NextResponse.json({
-            success: true,
-            ipfsUri: `ipfs://${cid}`,
-            gatewayUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
-            cid,
-            fileName: file.name,
-            fileSize: file.size,
-        });
-
-    } catch {
-        return NextResponse.json({
-            error: 'IPFS upload requires configuration. Please set NFT_STORAGE_API_KEY in environment variables.',
-            instructions: 'Get a free API key at https://nft.storage and add NFT_STORAGE_API_KEY to your .env file.',
-        }, { status: 503 });
     }
 }
