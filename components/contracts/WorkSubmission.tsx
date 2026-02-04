@@ -26,7 +26,9 @@ import {
     DollarSign,
     Ban,
     Trophy,
-    Trash2
+    Trash2,
+    ImagePlus,
+    File
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { useWorkSubmission, usePINN44Token } from '@/hooks/useContracts';
@@ -106,6 +108,11 @@ export function WorkSubmissionComponent() {
     const [txHash, setTxHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    // File upload states
+    const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
     // Check admin/judge roles
     const checkRoles = useCallback(async () => {
@@ -411,6 +418,51 @@ export function WorkSubmissionComponent() {
     const isDeadlinePassed = (deadline: bigint) => {
         if (deadline === BigInt(0)) return false;
         return Date.now() / 1000 > Number(deadline);
+    };
+
+    // Handle file upload to IPFS
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const setUploading = isThumbnail ? setIsUploadingThumbnail : setIsUploading;
+        const setUri = isThumbnail ? setThumbnailUri : setFileUri;
+
+        setUploading(true);
+        setUploadProgress(`Uploading ${file.name}...`);
+        setError(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            if (result.success) {
+                setUri(result.ipfsUri);
+                setUploadProgress(`✓ Uploaded: ${result.ipfsUri.slice(0, 30)}...`);
+                setSuccessMessage(`File uploaded to IPFS!`);
+            } else {
+                throw new Error(result.error || 'Upload failed');
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to upload file';
+            setError(message);
+            setUploadProgress(null);
+        } finally {
+            setUploading(false);
+            // Clear file input
+            e.target.value = '';
+        }
     };
 
     if (!CONTRACTS_CONFIG.WORK_SUBMISSION) {
@@ -719,24 +771,86 @@ export function WorkSubmissionComponent() {
                                     Submit Your Work
                                 </h3>
 
+                                {/* Upload Progress */}
+                                {uploadProgress && (
+                                    <div className="p-2 rounded bg-blue-900/30 text-blue-400 text-sm">
+                                        {uploadProgress}
+                                    </div>
+                                )}
+
+                                {/* Main File Upload */}
                                 <div className="space-y-2">
-                                    <Label>File URI (IPFS) *</Label>
-                                    <Input
-                                        placeholder="ipfs://..."
-                                        value={fileUri}
-                                        onChange={(e) => setFileUri(e.target.value)}
-                                        className="bg-gray-900"
-                                    />
+                                    <Label>Work File *</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="ipfs://... or upload a file"
+                                            value={fileUri}
+                                            onChange={(e) => setFileUri(e.target.value)}
+                                            className="bg-gray-900 flex-1"
+                                        />
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                onChange={(e) => handleFileUpload(e, false)}
+                                                disabled={isUploading}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={isUploading}
+                                                className="border-blue-500/50 hover:bg-blue-900/20"
+                                                asChild
+                                            >
+                                                <span>
+                                                    {isUploading ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <><File className="h-4 w-4 mr-1" /> Upload</>
+                                                    )}
+                                                </span>
+                                            </Button>
+                                        </label>
+                                    </div>
+                                    <p className="text-xs text-gray-500">Upload your work file (images, documents, etc.) to IPFS</p>
                                 </div>
 
+                                {/* Thumbnail Upload */}
                                 <div className="space-y-2">
-                                    <Label>Thumbnail URI (optional)</Label>
-                                    <Input
-                                        placeholder="ipfs://..."
-                                        value={thumbnailUri}
-                                        onChange={(e) => setThumbnailUri(e.target.value)}
-                                        className="bg-gray-900"
-                                    />
+                                    <Label>Thumbnail (optional)</Label>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="ipfs://... or upload an image"
+                                            value={thumbnailUri}
+                                            onChange={(e) => setThumbnailUri(e.target.value)}
+                                            className="bg-gray-900 flex-1"
+                                        />
+                                        <label className="cursor-pointer">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) => handleFileUpload(e, true)}
+                                                disabled={isUploadingThumbnail}
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={isUploadingThumbnail}
+                                                className="border-purple-500/50 hover:bg-purple-900/20"
+                                                asChild
+                                            >
+                                                <span>
+                                                    {isUploadingThumbnail ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <><ImagePlus className="h-4 w-4 mr-1" /> Upload</>
+                                                    )}
+                                                </span>
+                                            </Button>
+                                        </label>
+                                    </div>
+                                    <p className="text-xs text-gray-500">Add a preview image for your submission</p>
                                 </div>
 
                                 {selectedBounty.stakeRequired > BigInt(0) && (
@@ -748,7 +862,7 @@ export function WorkSubmissionComponent() {
 
                                 <Button
                                     onClick={handleSubmitWork}
-                                    disabled={isSubmitting || !fileUri}
+                                    disabled={isSubmitting || !fileUri || isUploading || isUploadingThumbnail}
                                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
                                 >
                                     {isSubmitting ? (
