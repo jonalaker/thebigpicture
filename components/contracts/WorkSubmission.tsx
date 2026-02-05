@@ -33,6 +33,7 @@ import {
 import { useWallet } from '@/hooks/useWallet';
 import { useWorkSubmission, usePINN44Token } from '@/hooks/useContracts';
 import { CONTRACTS_CONFIG, getExplorerTxUrl } from '@/lib/contracts';
+import { ConnectWalletBanner } from '@/components/ConnectWallet';
 
 interface Bounty {
     id: number;
@@ -562,10 +563,13 @@ export function WorkSubmissionComponent() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="w-6 h-6 text-blue-400" />
-                        Bounties & Work Submission
+                        Submit Work
                     </CardTitle>
-                    <CardDescription>Connect your wallet to Polygon to view bounties</CardDescription>
+                    <CardDescription>Connect your wallet to Polygon to submit work</CardDescription>
                 </CardHeader>
+                <CardContent>
+                    <ConnectWalletBanner />
+                </CardContent>
             </Card>
         );
     }

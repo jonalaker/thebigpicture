@@ -13,7 +13,7 @@ export default function Header() {
     { label: "Author", href: "/#author" },
     { label: "Airdrop", href: "/airdrop" },
     { label: "Staking", href: "/staking" },
-    { label: "Bounties", href: "/bounties" },
+    { label: "Submit Work", href: "/bounties" },
     { label: "Vault", href: "/vault" },
     { label: "Contact", href: "/#contact" },
   ]

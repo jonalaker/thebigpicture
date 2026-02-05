@@ -10,6 +10,7 @@ import { Loader2, TrendingUp, Lock, Unlock, Gift, Clock, Shield, Info, AlertTria
 import { useWallet } from '@/hooks/useWallet';
 import { useStakingVesting, usePINN44Token } from '@/hooks/useContracts';
 import { CONTRACTS_CONFIG, getExplorerTxUrl } from '@/lib/contracts';
+import { ConnectWalletBanner } from '@/components/ConnectWallet';
 
 interface StakeInfo {
     amount: bigint;
@@ -219,10 +220,13 @@ export function StakingVestingComponent() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-6 h-6 text-purple-400" />
-                        Vesting & Rewards
+                        Staking & Vesting
                     </CardTitle>
-                    <CardDescription>Connect your wallet to access your vested tokens and rewards</CardDescription>
+                    <CardDescription>Connect your wallet to access staking features</CardDescription>
                 </CardHeader>
+                <CardContent>
+                    <ConnectWalletBanner />
+                </CardContent>
             </Card>
         );
     }

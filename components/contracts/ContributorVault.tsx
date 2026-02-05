@@ -10,6 +10,7 @@ import { Loader2, Vault, Lock, Unlock, TrendingUp, Timer, CheckCircle2 } from 'l
 import { useWallet } from '@/hooks/useWallet';
 import { useContributorVault } from '@/hooks/useContracts';
 import { CONTRACTS_CONFIG, getExplorerTxUrl } from '@/lib/contracts';
+import { ConnectWalletBanner } from '@/components/ConnectWallet';
 
 interface ContributorStats {
     totalEarned: bigint;
@@ -125,8 +126,11 @@ export function ContributorVaultComponent() {
                         <Vault className="w-6 h-6 text-green-400" />
                         Contributor Vault
                     </CardTitle>
-                    <CardDescription>Connect your wallet to Polygon Amoy to view your rewards</CardDescription>
+                    <CardDescription>Connect your wallet to Polygon to view your rewards</CardDescription>
                 </CardHeader>
+                <CardContent>
+                    <ConnectWalletBanner />
+                </CardContent>
             </Card>
         );
     }
