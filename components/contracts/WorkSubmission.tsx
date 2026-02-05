@@ -420,7 +420,7 @@ export function WorkSubmissionComponent() {
         return Date.now() / 1000 > Number(deadline);
     };
 
-    // Handle file upload to IPFS
+    // Handle file upload to IPFS (client-side direct upload to Pinata)
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -428,32 +428,70 @@ export function WorkSubmissionComponent() {
         const setUploading = isThumbnail ? setIsUploadingThumbnail : setIsUploading;
         const setUri = isThumbnail ? setThumbnailUri : setFileUri;
 
+        // Check file size (max 100MB)
+        const maxSize = 100 * 1024 * 1024;
+        if (file.size > maxSize) {
+            setError('File too large. Maximum size is 100MB.');
+            return;
+        }
+
         setUploading(true);
-        setUploadProgress(`Uploading ${file.name}...`);
+        setUploadProgress(`Preparing upload for ${file.name}...`);
         setError(null);
 
         try {
+            // Step 1: Get temporary upload token from server
+            setUploadProgress('Getting upload token...');
+            const tokenResponse = await fetch('/api/upload/token');
+            const tokenData = await tokenResponse.json();
+
+            if (!tokenResponse.ok || !tokenData.jwt) {
+                throw new Error(tokenData.error || 'Failed to get upload token');
+            }
+
+            // Step 2: Upload directly to Pinata from browser
+            setUploadProgress(`Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`);
+
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('/api/upload', {
+            // Add metadata
+            const metadata = JSON.stringify({
+                name: file.name,
+                keyvalues: {
+                    uploadedAt: new Date().toISOString(),
+                    source: 'thebigpicture-bounties',
+                }
+            });
+            formData.append('pinataMetadata', metadata);
+            formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
+
+            const uploadResponse = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${tokenData.jwt}`,
+                },
                 body: formData,
             });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Upload failed');
+            if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error('Pinata upload error:', errorText);
+                throw new Error('Failed to upload to IPFS');
             }
 
-            if (result.success) {
-                setUri(result.ipfsUri);
-                setUploadProgress(`✓ Uploaded: ${result.ipfsUri.slice(0, 30)}...`);
-                setSuccessMessage(`File uploaded to IPFS!`);
-            } else {
-                throw new Error(result.error || 'Upload failed');
+            const result = await uploadResponse.json();
+            const cid = result.IpfsHash;
+
+            if (!cid) {
+                throw new Error('Failed to get CID from upload');
             }
+
+            const ipfsUri = `ipfs://${cid}`;
+            setUri(ipfsUri);
+            setUploadProgress(`✓ Uploaded: ${ipfsUri.slice(0, 30)}...`);
+            setSuccessMessage(`File uploaded to IPFS!`);
+
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Failed to upload file';
             setError(message);
