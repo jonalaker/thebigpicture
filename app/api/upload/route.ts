@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // Pinata API endpoint
 const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 
-// Increase timeout for large files
-const UPLOAD_TIMEOUT = 120000; // 2 minutes
+// Route segment config for App Router (Next.js 13+)
+// These must be individual exports
+export const maxDuration = 120; // 2 minutes max execution time
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
     try {
@@ -18,11 +20,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check file size (max 100MB for Pinata)
-        const maxSize = 100 * 1024 * 1024; // 100MB
+        // Check file size (max 50MB - reasonable for serverless)
+        const maxSize = 50 * 1024 * 1024; // 50MB
         if (file.size > maxSize) {
             return NextResponse.json(
-                { error: 'File too large. Maximum size is 100MB.' },
+                { error: 'File too large. Maximum size is 50MB for uploads.' },
                 { status: 400 }
             );
         }
@@ -53,82 +55,72 @@ export async function POST(request: NextRequest) {
         });
         pinataFormData.append('pinataMetadata', metadata);
 
-        // Optional: Pin options
+        // Pin options
         const options = JSON.stringify({
             cidVersion: 1,
         });
         pinataFormData.append('pinataOptions', options);
 
-        // Create AbortController for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT);
+        // Upload to Pinata
+        console.log(`Uploading file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
 
-        try {
-            // Upload to Pinata with extended timeout
-            const response = await fetch(PINATA_API_URL, {
-                method: 'POST',
-                headers: {
-                    'pinata_api_key': pinataApiKey,
-                    'pinata_secret_api_key': pinataSecretKey,
-                },
-                body: pinataFormData,
-                signal: controller.signal,
-            });
+        const response = await fetch(PINATA_API_URL, {
+            method: 'POST',
+            headers: {
+                'pinata_api_key': pinataApiKey,
+                'pinata_secret_api_key': pinataSecretKey,
+            },
+            body: pinataFormData,
+        });
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Pinata error:', errorText);
-                return NextResponse.json(
-                    { error: 'Failed to upload to IPFS. Please try again.' },
-                    { status: 500 }
-                );
-            }
-
-            const result = await response.json();
-            const cid = result.IpfsHash;
-
-            if (!cid) {
-                return NextResponse.json(
-                    { error: 'Failed to get CID from upload' },
-                    { status: 500 }
-                );
-            }
-
-            const ipfsUri = `ipfs://${cid}`;
-            const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
-
-            return NextResponse.json({
-                success: true,
-                ipfsUri,
-                gatewayUrl,
-                cid,
-                fileName: file.name,
-                fileSize: file.size,
-            });
-
-        } catch (fetchError) {
-            clearTimeout(timeoutId);
-
-            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-                return NextResponse.json({
-                    error: 'Upload timed out. Large files may take longer. Please try again or use a smaller file.',
-                    suggestion: 'For files over 10MB, consider compressing them first.',
-                }, { status: 408 });
-            }
-
-            throw fetchError;
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Pinata error:', errorText);
+            return NextResponse.json(
+                { error: 'Failed to upload to IPFS. Please try again.' },
+                { status: 500 }
+            );
         }
+
+        const result = await response.json();
+        const cid = result.IpfsHash;
+
+        if (!cid) {
+            return NextResponse.json(
+                { error: 'Failed to get CID from upload' },
+                { status: 500 }
+            );
+        }
+
+        const ipfsUri = `ipfs://${cid}`;
+        const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+
+        console.log(`Upload successful: ${ipfsUri}`);
+
+        return NextResponse.json({
+            success: true,
+            ipfsUri,
+            gatewayUrl,
+            cid,
+            fileName: file.name,
+            fileSize: file.size,
+        });
 
     } catch (error) {
         console.error('Upload error:', error);
 
-        // Check for network/connection errors
-        if (error instanceof Error && error.message.includes('fetch failed')) {
+        // Check for specific error types
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
             return NextResponse.json({
-                error: 'Connection to IPFS service failed. Please check your internet connection and try again.',
-                details: 'The upload service is temporarily unavailable.',
+                error: 'Upload timed out. Please try with a smaller file or try again.',
+            }, { status: 408 });
+        }
+
+        if (errorMessage.includes('fetch failed') || errorMessage.includes('network')) {
+            return NextResponse.json({
+                error: 'Connection to IPFS service failed. Please try again.',
             }, { status: 503 });
         }
 
@@ -138,13 +130,3 @@ export async function POST(request: NextRequest) {
         );
     }
 }
-
-// Configure Next.js to allow larger request bodies
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '100mb',
-        },
-        responseLimit: '100mb',
-    },
-};
