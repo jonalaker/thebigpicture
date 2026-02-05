@@ -420,7 +420,7 @@ export function WorkSubmissionComponent() {
         return Date.now() / 1000 > Number(deadline);
     };
 
-    // Handle file upload to IPFS (supports Lighthouse for 2GB+ or Pinata fallback)
+    // Handle file upload to IPFS with retry logic and progress tracking
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -432,99 +432,117 @@ export function WorkSubmissionComponent() {
         setUploadProgress(`Preparing upload for ${file.name}...`);
         setError(null);
 
-        try {
-            // Step 1: Get upload config from server
-            setUploadProgress('Getting upload token...');
-            const tokenResponse = await fetch('/api/upload/token');
-            const tokenData = await tokenResponse.json();
+        const maxRetries = 3;
+        let lastError: Error | null = null;
 
-            if (!tokenResponse.ok) {
-                throw new Error(tokenData.error || 'Failed to get upload token');
-            }
-
-            // Check file size against provider limit
-            if (file.size > tokenData.maxFileSize) {
-                const maxMB = Math.round(tokenData.maxFileSize / 1024 / 1024);
-                throw new Error(`File too large. Maximum size is ${maxMB}MB with current provider.`);
-            }
-
-            const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
-            let cid: string;
-
-            if (tokenData.provider === 'lighthouse') {
-                // Upload to Lighthouse (supports 2GB+ files)
-                setUploadProgress(`Uploading ${file.name} (${fileSizeMB} MB) via Lighthouse...`);
-
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const uploadResponse = await fetch('https://node.lighthouse.storage/api/v0/add', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${tokenData.apiKey}`,
-                    },
-                    body: formData,
-                });
-
-                if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
-                    console.error('Lighthouse upload error:', errorText);
-                    throw new Error('Failed to upload to IPFS');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Step 1: Get upload config from server
+                if (attempt > 1) {
+                    setUploadProgress(`Retry ${attempt}/${maxRetries}: Getting upload token...`);
+                } else {
+                    setUploadProgress('Getting upload token...');
                 }
 
-                const result = await uploadResponse.json();
-                cid = result.Hash;
+                const tokenResponse = await fetch('/api/upload/token');
+                const tokenData = await tokenResponse.json();
 
-            } else {
-                // Upload to Pinata (fallback, 100MB limit)
-                setUploadProgress(`Uploading ${file.name} (${fileSizeMB} MB) via Pinata...`);
+                if (!tokenResponse.ok) {
+                    throw new Error(tokenData.error || 'Failed to get upload token');
+                }
 
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('pinataMetadata', JSON.stringify({
-                    name: file.name,
-                    keyvalues: {
-                        uploadedAt: new Date().toISOString(),
-                        source: 'thebigpicture-bounties',
+                // Check file size against provider limit
+                if (file.size > tokenData.maxFileSize) {
+                    const maxMB = Math.round(tokenData.maxFileSize / 1024 / 1024);
+                    throw new Error(`File too large. Maximum size is ${maxMB}MB with current provider.`);
+                }
+
+                const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+
+                // Upload with progress tracking using XMLHttpRequest
+                const cid = await new Promise<string>((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    let uploadUrl: string;
+                    let headers: Record<string, string> = {};
+
+                    if (tokenData.provider === 'lighthouse') {
+                        uploadUrl = 'https://node.lighthouse.storage/api/v0/add';
+                        headers['Authorization'] = `Bearer ${tokenData.apiKey}`;
+                    } else {
+                        uploadUrl = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
+                        headers['Authorization'] = `Bearer ${tokenData.jwt}`;
+                        formData.append('pinataMetadata', JSON.stringify({
+                            name: file.name,
+                            keyvalues: { uploadedAt: new Date().toISOString(), source: 'thebigpicture-bounties' }
+                        }));
+                        formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
                     }
-                }));
-                formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
 
-                const uploadResponse = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${tokenData.jwt}`,
-                    },
-                    body: formData,
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const percent = Math.round((event.loaded / event.total) * 100);
+                            const loadedMB = (event.loaded / 1024 / 1024).toFixed(1);
+                            const prefix = attempt > 1 ? `Retry ${attempt}: ` : '';
+                            setUploadProgress(`${prefix}Uploading ${file.name}... ${percent}% (${loadedMB}/${fileSizeMB} MB)`);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                const result = JSON.parse(xhr.responseText);
+                                const hash = tokenData.provider === 'lighthouse' ? result.Hash : result.IpfsHash;
+                                if (hash) {
+                                    resolve(hash);
+                                } else {
+                                    reject(new Error('No CID returned from upload'));
+                                }
+                            } catch {
+                                reject(new Error('Invalid response from upload service'));
+                            }
+                        } else {
+                            reject(new Error(`Upload failed with status ${xhr.status}`));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error('Network error during upload'));
+                    xhr.ontimeout = () => reject(new Error('Upload timed out'));
+                    xhr.timeout = 600000; // 10 minute timeout
+
+                    xhr.open('POST', uploadUrl);
+                    Object.entries(headers).forEach(([key, value]) => xhr.setRequestHeader(key, value));
+                    xhr.send(formData);
                 });
 
-                if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
-                    console.error('Pinata upload error:', errorText);
-                    throw new Error('Failed to upload to IPFS');
+                const ipfsUri = `ipfs://${cid}`;
+                setUri(ipfsUri);
+                setUploadProgress(`✓ Uploaded successfully!`);
+                setSuccessMessage(`File uploaded to IPFS! (${fileSizeMB} MB)`);
+
+                // Success - exit retry loop
+                setUploading(false);
+                e.target.value = '';
+                return;
+
+            } catch (err: unknown) {
+                lastError = err instanceof Error ? err : new Error('Upload failed');
+                console.error(`Upload attempt ${attempt} failed:`, lastError.message);
+
+                if (attempt < maxRetries) {
+                    setUploadProgress(`Upload failed. Retrying in 2 seconds... (${attempt}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
-
-                const result = await uploadResponse.json();
-                cid = result.IpfsHash;
             }
-
-            if (!cid) {
-                throw new Error('Failed to get CID from upload');
-            }
-
-            const ipfsUri = `ipfs://${cid}`;
-            setUri(ipfsUri);
-            setUploadProgress(`✓ Uploaded: ${ipfsUri.slice(0, 35)}...`);
-            setSuccessMessage(`File uploaded to IPFS! (${fileSizeMB} MB)`);
-
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Failed to upload file';
-            setError(message);
-            setUploadProgress(null);
-        } finally {
-            setUploading(false);
-            e.target.value = '';
         }
+
+        // All retries failed
+        setError(lastError?.message || 'Upload failed after multiple attempts. Please check your connection and try again.');
+        setUploadProgress(null);
+        setUploading(false);
+        e.target.value = '';
     };
 
     if (!CONTRACTS_CONFIG.WORK_SUBMISSION) {
