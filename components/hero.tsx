@@ -49,7 +49,7 @@ export default function Hero() {
             </div>
 
             <div className="p-3 rounded-lg bg-blue-900/30 border border-blue-500/30 flex justify-between items-center">
-              <span className="font-semibold">20 Sequences (25 min each)</span>
+              <span className="font-semibold">5 minutes each (not 25 min each)</span>
               <span className="text-green-400 font-bold">$30 + 810 PINNs each</span>
             </div>
 

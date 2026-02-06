@@ -32,26 +32,38 @@ export function ContributorVaultComponent() {
     const [txHash, setTxHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch vault data
+    // Fetch vault data with individual error handling
     const fetchData = useCallback(async () => {
         if (!isConnected || !isCorrectNetwork || !vault.contract) return;
 
         setIsLoading(true);
-        try {
-            const [contributorStats, claimable, locked] = await Promise.all([
-                vault.getContributorStats(),
-                vault.getClaimableAmount(),
-                vault.getLockedBalance(),
-            ]);
 
+        // Fetch each value independently to avoid one failure breaking everything
+        try {
+            const contributorStats = await vault.getContributorStats();
             setStats(contributorStats);
+        } catch (err) {
+            console.log('No contributor stats for user (may not have any rewards yet)');
+            setStats(null);
+        }
+
+        try {
+            const claimable = await vault.getClaimableAmount();
             setClaimableAmount(claimable);
+        } catch (err) {
+            console.log('Could not get claimable amount');
+            setClaimableAmount(BigInt(0));
+        }
+
+        try {
+            const locked = await vault.getLockedBalance();
             setLockedBalance(locked);
         } catch (err) {
-            console.error('Failed to fetch vault data:', err);
-        } finally {
-            setIsLoading(false);
+            console.log('Could not get locked balance');
+            setLockedBalance(BigInt(0));
         }
+
+        setIsLoading(false);
     }, [isConnected, isCorrectNetwork, vault]);
 
     useEffect(() => {
