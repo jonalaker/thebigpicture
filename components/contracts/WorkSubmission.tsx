@@ -440,80 +440,78 @@ export function WorkSubmissionComponent() {
         setError(null);
 
         const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
-        const maxRetries = 3;
-        let lastError: Error | null = null;
 
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                const cid = await new Promise<string>((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    const formData = new FormData();
-                    formData.append('file', file);
+        try {
+            const cid = await new Promise<string>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const formData = new FormData();
+                formData.append('file', file);
+                let uploadComplete = false;
 
-                    xhr.upload.onprogress = (event) => {
-                        if (event.lengthComputable) {
-                            const percent = Math.round((event.loaded / event.total) * 100);
-                            const loadedMB = (event.loaded / 1024 / 1024).toFixed(1);
-                            const prefix = attempt > 1 ? `Retry ${attempt}: ` : '';
-                            setUploadProgress(`${prefix}Uploading ${file.name}... ${percent}% (${loadedMB}/${fileSizeMB} MB)`);
-                        }
-                    };
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        const loadedMB = (event.loaded / 1024 / 1024).toFixed(1);
+                        setUploadProgress(`Uploading ${file.name}... ${percent}% (${loadedMB}/${fileSizeMB} MB)`);
+                    }
+                };
 
-                    xhr.onload = () => {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                const result = JSON.parse(xhr.responseText);
-                                if (result.success && result.cid) {
-                                    resolve(result.cid);
-                                } else {
-                                    reject(new Error(result.error || 'Upload failed'));
-                                }
-                            } catch {
-                                reject(new Error('Invalid response from server'));
+                xhr.upload.onload = () => {
+                    // File reached the server, now server is uploading to IPFS
+                    uploadComplete = true;
+                    setUploadProgress(`Saving to IPFS... (this may take a moment for large files)`);
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const result = JSON.parse(xhr.responseText);
+                            if (result.success && result.cid) {
+                                resolve(result.cid);
+                            } else {
+                                reject(new Error(result.error || 'Upload failed'));
                             }
-                        } else {
-                            try {
-                                const errResult = JSON.parse(xhr.responseText);
-                                reject(new Error(errResult.error || `Upload failed (${xhr.status})`));
-                            } catch {
-                                reject(new Error(`Upload failed with status ${xhr.status}`));
-                            }
+                        } catch {
+                            reject(new Error('Invalid response from server'));
                         }
-                    };
+                    } else {
+                        try {
+                            const errResult = JSON.parse(xhr.responseText);
+                            reject(new Error(errResult.error || `Upload failed (${xhr.status})`));
+                        } catch {
+                            reject(new Error(`Upload failed with status ${xhr.status}`));
+                        }
+                    }
+                };
 
-                    xhr.onerror = () => reject(new Error('Network error during upload. Check your connection.'));
-                    xhr.ontimeout = () => reject(new Error('Upload timed out. Try a smaller file or check your connection.'));
-                    xhr.timeout = 600000; // 10 minutes
+                xhr.onerror = () => {
+                    if (uploadComplete) {
+                        reject(new Error('Connection lost while saving to IPFS. The file may still be processing — try refreshing.'));
+                    } else {
+                        reject(new Error('Network error during upload. Check your connection.'));
+                    }
+                };
+                // No timeout — large files can take a long time for server→IPFS transfer
+                xhr.timeout = 0;
 
-                    xhr.open('POST', '/api/upload');
-                    xhr.send(formData);
-                });
+                xhr.open('POST', '/api/upload');
+                xhr.send(formData);
+            });
 
-                const ipfsUri = `ipfs://${cid}`;
-                setUri(ipfsUri);
-                setUploadProgress(`✓ Uploaded successfully!`);
-                setSuccessMessage(`File uploaded to IPFS! (${fileSizeMB} MB)`);
+            const ipfsUri = `ipfs://${cid}`;
+            setUri(ipfsUri);
+            setUploadProgress(`✓ Uploaded successfully!`);
+            setSuccessMessage(`File uploaded to IPFS! (${fileSizeMB} MB)`);
 
-                setUploading(false);
-                e.target.value = '';
-                return;
-
-            } catch (err: unknown) {
-                lastError = err instanceof Error ? err : new Error('Upload failed');
-                console.error(`Upload attempt ${attempt} failed:`, lastError.message);
-
-                if (attempt < maxRetries) {
-                    setUploadProgress(`Upload failed. Retrying in 2 seconds... (${attempt}/${maxRetries})`);
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Upload failed';
+            console.error('Upload failed:', message);
+            setError(message);
+            setUploadProgress(null);
+        } finally {
+            setUploading(false);
+            e.target.value = '';
         }
-
-        // All retries failed
-        setError(lastError?.message || 'Upload failed after multiple attempts. Please check your connection and try again.');
-        setUploadProgress(null);
-        setUploading(false);
-        e.target.value = '';
     };
 
     if (!CONTRACTS_CONFIG.WORK_SUBMISSION) {
