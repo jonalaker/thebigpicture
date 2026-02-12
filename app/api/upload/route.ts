@@ -1,29 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import lighthouse from '@lighthouse-web3/sdk';
+import { writeFile, unlink, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { randomUUID } from 'crypto';
 
 // No timeout limits on AWS EC2
-export const maxDuration = 300;
+export const maxDuration = 600; // 10 minutes for very large files
 export const dynamic = 'force-dynamic';
 
 const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 
-async function uploadToLighthouse(file: File, apiKey: string): Promise<{ cid: string; provider: string }> {
-    // Convert File to Buffer for the SDK
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+async function uploadToLighthouse(filePath: string, apiKey: string, fileName: string): Promise<string> {
+    console.log(`[Upload] Lighthouse SDK: uploading ${fileName} from disk...`);
 
-    console.log(`[Upload] Lighthouse SDK: uploading ${file.name} (${(buffer.length / 1024 / 1024).toFixed(2)} MB)...`);
+    const result = await lighthouse.upload(
+        filePath,
+        apiKey,
+        undefined, // no deal params
+        undefined, // cidVersion default
+        (progressData: any) => {
+            if (progressData?.progress) {
+                console.log(`[Upload] Lighthouse progress: ${progressData.progress}%`);
+            }
+        }
+    );
 
-    const result = await lighthouse.uploadBuffer(buffer, apiKey, file.name);
+    // Result can be { data: { Name, Hash, Size } } or { data: [{ Name, Hash, Size }] }
+    const data = Array.isArray(result?.data) ? result.data[0] : result?.data;
 
-    if (!result?.data?.Hash) {
+    if (!data?.Hash) {
+        console.error('[Upload] Lighthouse result:', JSON.stringify(result));
         throw new Error('Lighthouse SDK returned no hash');
     }
 
-    return { cid: result.data.Hash, provider: 'lighthouse' };
+    console.log(`[Upload] Lighthouse success: ${data.Hash}`);
+    return data.Hash;
 }
 
-async function uploadToPinata(file: File, apiKey: string, secretKey: string): Promise<{ cid: string; provider: string }> {
+async function uploadToPinata(file: File, apiKey: string, secretKey: string): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('pinataMetadata', JSON.stringify({
@@ -51,10 +66,14 @@ async function uploadToPinata(file: File, apiKey: string, secretKey: string): Pr
 
     const result = await response.json();
     if (!result.IpfsHash) throw new Error('No IpfsHash in Pinata response');
-    return { cid: result.IpfsHash, provider: 'pinata' };
+
+    console.log(`[Upload] Pinata success: ${result.IpfsHash}`);
+    return result.IpfsHash;
 }
 
 export async function POST(request: NextRequest) {
+    let tempFilePath: string | null = null;
+
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File | null;
@@ -63,7 +82,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
         }
 
-        // 2GB max
         if (file.size > 2 * 1024 * 1024 * 1024) {
             return NextResponse.json({ error: 'File too large. Maximum size is 2GB.' }, { status: 400 });
         }
@@ -75,14 +93,34 @@ export async function POST(request: NextRequest) {
         const pinataApiKey = process.env.PINATA_API_KEY;
         const pinataSecretKey = process.env.PINATA_SECRET_KEY;
 
-        const errors: string[] = [];
-        let result: { cid: string; provider: string } | null = null;
+        if (!lighthouseApiKey && !pinataApiKey) {
+            return NextResponse.json({
+                error: 'No IPFS provider configured. Set LIGHTHOUSE_API_KEY or PINATA_API_KEY in .env',
+            }, { status: 503 });
+        }
 
-        // Try Lighthouse first (supports up to 2GB via SDK)
+        const errors: string[] = [];
+        let cid: string | null = null;
+        let provider = '';
+
+        // For Lighthouse: save file to disk first, then upload from path
+        // This avoids holding 2GB+ in memory as a Buffer
         if (lighthouseApiKey) {
             try {
-                result = await uploadToLighthouse(file, lighthouseApiKey);
-                console.log(`[Upload] Lighthouse success: ${result.cid}`);
+                // Save to temp file
+                const tempDir = join(tmpdir(), 'tbp-uploads');
+                await mkdir(tempDir, { recursive: true });
+
+                const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                tempFilePath = join(tempDir, `${randomUUID()}_${safeFileName}`);
+
+                console.log(`[Upload] Writing to temp file: ${tempFilePath}`);
+                const arrayBuffer = await file.arrayBuffer();
+                await writeFile(tempFilePath, Buffer.from(arrayBuffer));
+                console.log(`[Upload] Temp file written, starting Lighthouse upload...`);
+
+                cid = await uploadToLighthouse(tempFilePath, lighthouseApiKey, file.name);
+                provider = 'lighthouse';
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.error('[Upload] Lighthouse failed:', msg);
@@ -90,14 +128,14 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Fallback to Pinata if Lighthouse failed
-        if (!result && pinataApiKey && pinataSecretKey) {
+        // Fallback to Pinata for smaller files
+        if (!cid && pinataApiKey && pinataSecretKey) {
             if (file.size > 100 * 1024 * 1024) {
                 errors.push(`Pinata: File too large (${fileSizeMB}MB > 100MB free tier limit)`);
             } else {
                 try {
-                    result = await uploadToPinata(file, pinataApiKey, pinataSecretKey);
-                    console.log(`[Upload] Pinata success: ${result.cid}`);
+                    cid = await uploadToPinata(file, pinataApiKey, pinataSecretKey);
+                    provider = 'pinata';
                 } catch (err) {
                     const msg = err instanceof Error ? err.message : String(err);
                     console.error('[Upload] Pinata failed:', msg);
@@ -106,34 +144,26 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // No providers configured
-        if (!lighthouseApiKey && !pinataApiKey) {
-            return NextResponse.json({
-                error: 'No IPFS provider configured. Set LIGHTHOUSE_API_KEY or PINATA_API_KEY in .env',
-            }, { status: 503 });
-        }
-
-        // All providers failed
-        if (!result) {
+        if (!cid) {
             console.error('[Upload] All providers failed:', errors);
             return NextResponse.json({
                 error: `Upload failed. ${errors.join('. ')}`,
             }, { status: 500 });
         }
 
-        const ipfsUri = `ipfs://${result.cid}`;
-        const gatewayUrl = result.provider === 'lighthouse'
-            ? `https://gateway.lighthouse.storage/ipfs/${result.cid}`
-            : `https://gateway.pinata.cloud/ipfs/${result.cid}`;
+        const ipfsUri = `ipfs://${cid}`;
+        const gatewayUrl = provider === 'lighthouse'
+            ? `https://gateway.lighthouse.storage/ipfs/${cid}`
+            : `https://gateway.pinata.cloud/ipfs/${cid}`;
 
-        console.log(`[Upload] Complete via ${result.provider}: ${ipfsUri}`);
+        console.log(`[Upload] Complete via ${provider}: ${ipfsUri}`);
 
         return NextResponse.json({
             success: true,
             ipfsUri,
             gatewayUrl,
-            cid: result.cid,
-            provider: result.provider,
+            cid,
+            provider,
             fileName: file.name,
             fileSize: file.size,
         });
@@ -142,5 +172,15 @@ export async function POST(request: NextRequest) {
         console.error('[Upload] Unexpected error:', error);
         const msg = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: `Upload failed: ${msg}` }, { status: 500 });
+    } finally {
+        // Always clean up temp file
+        if (tempFilePath) {
+            try {
+                await unlink(tempFilePath);
+                console.log(`[Upload] Temp file cleaned up`);
+            } catch {
+                // ignore cleanup errors
+            }
+        }
     }
 }
