@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Pinata API endpoint
-const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
-
-// Route segment config for App Router (Next.js 13+)
-// These must be individual exports
-export const maxDuration = 120; // 2 minutes max execution time
+// No timeout limits on AWS EC2 — upload server-side directly
+export const maxDuration = 300; // 5 minutes (only matters if deployed elsewhere)
 export const dynamic = 'force-dynamic';
+
+const LIGHTHOUSE_API_URL = 'https://node.lighthouse.storage/api/v0/add';
+const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 
 export async function POST(request: NextRequest) {
     try {
@@ -20,112 +19,124 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check file size (max 50MB - reasonable for serverless)
-        const maxSize = 50 * 1024 * 1024; // 50MB
+        // 2GB max on EC2
+        const maxSize = 2 * 1024 * 1024 * 1024;
         if (file.size > maxSize) {
             return NextResponse.json(
-                { error: 'File too large. Maximum size is 50MB for uploads.' },
+                { error: 'File too large. Maximum size is 2GB.' },
                 { status: 400 }
             );
         }
 
-        // Get Pinata API keys from environment
+        console.log(`[Upload] Starting: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+
+        // Try Lighthouse first, then Pinata as fallback
+        const lighthouseApiKey = process.env.LIGHTHOUSE_API_KEY;
         const pinataApiKey = process.env.PINATA_API_KEY;
         const pinataSecretKey = process.env.PINATA_SECRET_KEY;
 
-        if (!pinataApiKey || !pinataSecretKey) {
+        let cid: string;
+        let provider: string;
+
+        if (lighthouseApiKey) {
+            // Upload to Lighthouse (supports up to 2GB)
+            provider = 'lighthouse';
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+
+            const response = await fetch(LIGHTHOUSE_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${lighthouseApiKey}`,
+                },
+                body: uploadFormData,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[Upload] Lighthouse error:', errorText);
+                throw new Error(`Lighthouse upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            cid = result.Hash;
+
+        } else if (pinataApiKey && pinataSecretKey) {
+            // Fallback to Pinata
+            provider = 'pinata';
+
+            // Pinata limit: 100MB
+            if (file.size > 100 * 1024 * 1024) {
+                return NextResponse.json({
+                    error: 'File too large for Pinata (100MB max). Configure LIGHTHOUSE_API_KEY for files up to 2GB.',
+                }, { status: 400 });
+            }
+
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+            uploadFormData.append('pinataMetadata', JSON.stringify({
+                name: file.name,
+                keyvalues: {
+                    uploadedAt: new Date().toISOString(),
+                    source: 'thebigpicture',
+                }
+            }));
+            uploadFormData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
+
+            const response = await fetch(PINATA_API_URL, {
+                method: 'POST',
+                headers: {
+                    'pinata_api_key': pinataApiKey,
+                    'pinata_secret_api_key': pinataSecretKey,
+                },
+                body: uploadFormData,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('[Upload] Pinata error:', errorText);
+                throw new Error(`Pinata upload failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            cid = result.IpfsHash;
+
+        } else {
             return NextResponse.json({
-                error: 'IPFS upload not configured. Please set PINATA_API_KEY and PINATA_SECRET_KEY in environment variables.',
-                instructions: 'Get your free API keys at https://pinata.cloud (1GB free storage)',
+                error: 'No IPFS provider configured. Set LIGHTHOUSE_API_KEY or PINATA_API_KEY in environment.',
             }, { status: 503 });
         }
 
-        // Create form data for Pinata
-        const pinataFormData = new FormData();
-        pinataFormData.append('file', file);
-
-        // Add metadata
-        const metadata = JSON.stringify({
-            name: file.name,
-            keyvalues: {
-                uploadedAt: new Date().toISOString(),
-                source: 'thebigpicture-bounties',
-                fileSize: file.size.toString(),
-            }
-        });
-        pinataFormData.append('pinataMetadata', metadata);
-
-        // Pin options
-        const options = JSON.stringify({
-            cidVersion: 1,
-        });
-        pinataFormData.append('pinataOptions', options);
-
-        // Upload to Pinata
-        console.log(`Uploading file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-
-        const response = await fetch(PINATA_API_URL, {
-            method: 'POST',
-            headers: {
-                'pinata_api_key': pinataApiKey,
-                'pinata_secret_api_key': pinataSecretKey,
-            },
-            body: pinataFormData,
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Pinata error:', errorText);
-            return NextResponse.json(
-                { error: 'Failed to upload to IPFS. Please try again.' },
-                { status: 500 }
-            );
-        }
-
-        const result = await response.json();
-        const cid = result.IpfsHash;
-
         if (!cid) {
             return NextResponse.json(
-                { error: 'Failed to get CID from upload' },
+                { error: 'Upload succeeded but no CID was returned' },
                 { status: 500 }
             );
         }
 
         const ipfsUri = `ipfs://${cid}`;
-        const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        const gatewayUrl = provider === 'lighthouse'
+            ? `https://gateway.lighthouse.storage/ipfs/${cid}`
+            : `https://gateway.pinata.cloud/ipfs/${cid}`;
 
-        console.log(`Upload successful: ${ipfsUri}`);
+        console.log(`[Upload] Success via ${provider}: ${ipfsUri}`);
 
         return NextResponse.json({
             success: true,
             ipfsUri,
             gatewayUrl,
             cid,
+            provider,
             fileName: file.name,
             fileSize: file.size,
         });
 
     } catch (error) {
-        console.error('Upload error:', error);
-
-        // Check for specific error types
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-        if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-            return NextResponse.json({
-                error: 'Upload timed out. Please try with a smaller file or try again.',
-            }, { status: 408 });
-        }
-
-        if (errorMessage.includes('fetch failed') || errorMessage.includes('network')) {
-            return NextResponse.json({
-                error: 'Connection to IPFS service failed. Please try again.',
-            }, { status: 503 });
-        }
+        console.error('[Upload] Error:', error);
+        const msg = error instanceof Error ? error.message : 'Unknown error';
 
         return NextResponse.json(
-            { error: 'Failed to process upload. Please try again.' },
+            { error: `Upload failed: ${msg}` },
             { status: 500 }
         );
     }

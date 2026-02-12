@@ -6,10 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Increase body size limit for file uploads (50MB)
+  // Increase body size limit for file uploads (2GB on AWS EC2)
   experimental: {
     serverActions: {
-      bodySizeLimit: '50mb',
+      bodySizeLimit: '2gb',
     },
   },
 }
