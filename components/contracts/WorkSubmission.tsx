@@ -421,19 +421,13 @@ export function WorkSubmissionComponent() {
         return Date.now() / 1000 > Number(deadline);
     };
 
-    // Handle file upload to IPFS via server (AWS EC2 — no timeout limits)
+    // Upload directly from browser to Lighthouse/IPFS — no server intermediary
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const setUploading = isThumbnail ? setIsUploadingThumbnail : setIsUploading;
         const setUri = isThumbnail ? setThumbnailUri : setFileUri;
-
-        // 2GB max
-        if (file.size > 2 * 1024 * 1024 * 1024) {
-            setError('File too large. Maximum size is 2GB.');
-            return;
-        }
 
         setUploading(true);
         setUploadProgress(`Preparing upload for ${file.name}...`);
@@ -442,11 +436,31 @@ export function WorkSubmissionComponent() {
         const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
 
         try {
+            // Step 1: Get upload config from server (just the API key + URL)
+            const configRes = await fetch('/api/upload');
+            const config = await configRes.json();
+            if (!configRes.ok) throw new Error(config.error || 'Failed to get upload config');
+
+            // Check file size limit
+            if (file.size > config.maxFileSize) {
+                const maxMB = Math.round(config.maxFileSize / 1024 / 1024);
+                throw new Error(`File too large. Maximum size is ${maxMB}MB with ${config.provider}.`);
+            }
+
+            // Step 2: Upload directly from browser to IPFS provider
             const cid = await new Promise<string>((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 const formData = new FormData();
                 formData.append('file', file);
-                let uploadComplete = false;
+
+                // Pinata needs extra metadata
+                if (config.provider === 'pinata') {
+                    formData.append('pinataMetadata', JSON.stringify({
+                        name: file.name,
+                        keyvalues: { uploadedAt: new Date().toISOString(), source: 'thebigpicture' }
+                    }));
+                    formData.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
+                }
 
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
@@ -456,45 +470,38 @@ export function WorkSubmissionComponent() {
                     }
                 };
 
-                xhr.upload.onload = () => {
-                    // File reached the server, now server is uploading to IPFS
-                    uploadComplete = true;
-                    setUploadProgress(`Saving to IPFS... (this may take a moment for large files)`);
-                };
-
                 xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         try {
                             const result = JSON.parse(xhr.responseText);
-                            if (result.success && result.cid) {
-                                resolve(result.cid);
+                            // Lighthouse returns { Hash }, Pinata returns { IpfsHash }
+                            const hash = result.Hash || result.IpfsHash;
+                            if (hash) {
+                                resolve(hash);
                             } else {
-                                reject(new Error(result.error || 'Upload failed'));
+                                reject(new Error('No IPFS hash returned'));
                             }
                         } catch {
-                            reject(new Error('Invalid response from server'));
+                            reject(new Error('Invalid response from IPFS provider'));
                         }
                     } else {
-                        try {
-                            const errResult = JSON.parse(xhr.responseText);
-                            reject(new Error(errResult.error || `Upload failed (${xhr.status})`));
-                        } catch {
-                            reject(new Error(`Upload failed with status ${xhr.status}`));
-                        }
+                        reject(new Error(`Upload failed (${xhr.status}). Try again.`));
                     }
                 };
 
-                xhr.onerror = () => {
-                    if (uploadComplete) {
-                        reject(new Error('Connection lost while saving to IPFS. The file may still be processing — try refreshing.'));
-                    } else {
-                        reject(new Error('Network error during upload. Check your connection.'));
-                    }
-                };
-                // No timeout — large files can take a long time for server→IPFS transfer
-                xhr.timeout = 0;
+                xhr.onerror = () => reject(new Error('Network error. Check your connection and try again.'));
+                xhr.timeout = 0; // No timeout for large files
 
-                xhr.open('POST', '/api/upload');
+                xhr.open('POST', config.uploadUrl);
+
+                // Set auth headers
+                if (config.provider === 'lighthouse') {
+                    xhr.setRequestHeader('Authorization', `Bearer ${config.apiKey}`);
+                } else if (config.provider === 'pinata') {
+                    xhr.setRequestHeader('pinata_api_key', config.apiKey);
+                    xhr.setRequestHeader('pinata_secret_api_key', config.secretKey);
+                }
+
                 xhr.send(formData);
             });
 
