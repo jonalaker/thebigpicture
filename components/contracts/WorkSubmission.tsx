@@ -523,10 +523,10 @@ export function WorkSubmissionComponent() {
 
     if (!CONTRACTS_CONFIG.WORK_SUBMISSION) {
         return (
-            <Card className="border-yellow-500/50 bg-black/60">
+            <Card className="border-[#FFD700]/30 bg-[#1a1a2e]/80">
                 <CardHeader>
                     <CardTitle>Work Submission</CardTitle>
-                    <CardDescription className="text-yellow-400">Contract not yet deployed</CardDescription>
+                    <CardDescription className="text-[#FFD700]">Contract not yet deployed</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -534,10 +534,10 @@ export function WorkSubmissionComponent() {
 
     if (!isConnected || !isCorrectNetwork) {
         return (
-            <Card className="border-gray-500/50 bg-black/60">
+            <Card className="border-[#2a2a3e] bg-[#1a1a2e]/80">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <FileText className="w-6 h-6 text-blue-400" />
+                        <FileText className="w-6 h-6 text-[#8247E5]" />
                         Submit Work
                     </CardTitle>
                     <CardDescription>Connect your wallet to Polygon to submit work</CardDescription>
@@ -555,12 +555,12 @@ export function WorkSubmissionComponent() {
             {(isAdmin || isJudge) && (
                 <div className="flex items-center gap-2 flex-wrap">
                     {isAdmin && (
-                        <Badge className="bg-purple-600 hover:bg-purple-700">
+                        <Badge className="bg-[#8247E5] hover:bg-[#5b2bba]">
                             <Shield className="w-3 h-3 mr-1" /> Admin
                         </Badge>
                     )}
                     {isJudge && !isAdmin && (
-                        <Badge className="bg-yellow-600 hover:bg-yellow-700">
+                        <Badge className="bg-[#FFD700]/80 hover:bg-[#FFD700] text-[#121212]">
                             <Gavel className="w-3 h-3 mr-1" /> Judge
                         </Badge>
                     )}
@@ -587,13 +587,13 @@ export function WorkSubmissionComponent() {
             )}
 
             {successMessage && (
-                <Alert className="bg-green-900/20 border-green-500/50">
-                    <CheckCircle2 className="h-4 w-4 text-green-400" />
-                    <AlertTitle className="text-green-400">Success</AlertTitle>
-                    <AlertDescription className="text-green-200">
+                <Alert className="bg-[#004d40]/20 border-[#00897b]/50">
+                    <CheckCircle2 className="h-4 w-4 text-[#00897b]" />
+                    <AlertTitle className="text-[#00897b]">Success</AlertTitle>
+                    <AlertDescription className="text-foreground/60">
                         {successMessage}
                         {txHash && (
-                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="ml-2 text-green-400 hover:underline">
+                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#FFD700] hover:underline">
                                 View transaction <ExternalLink className="w-3 h-3 inline" />
                             </a>
                         )}
@@ -603,10 +603,10 @@ export function WorkSubmissionComponent() {
 
             {/* Admin Panel - Only for admins */}
             {showAdminPanel && isAdmin && (
-                <Card className="border-purple-500/50 bg-black/60 backdrop-blur-lg">
+                <Card className="border-[#8247E5]/30 bg-[#1a1a2e]/80 backdrop-blur-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Shield className="w-6 h-6 text-purple-400" />
+                            <Shield className="w-6 h-6 text-[#8247E5]" />
                             Admin Panel
                         </CardTitle>
                         <CardDescription>Create and manage bounties</CardDescription>
@@ -625,7 +625,7 @@ export function WorkSubmissionComponent() {
                                         placeholder="e.g., Design a Community Logo"
                                         value={newBountyTitle}
                                         onChange={(e) => setNewBountyTitle(e.target.value)}
-                                        className="bg-gray-900"
+                                        className="bg-[#1a1a2e]"
                                     />
                                 </div>
 
@@ -635,7 +635,7 @@ export function WorkSubmissionComponent() {
                                         placeholder="Describe the task requirements..."
                                         value={newBountyDescription}
                                         onChange={(e) => setNewBountyDescription(e.target.value)}
-                                        className="bg-gray-900 min-h-[100px]"
+                                        className="bg-[#1a1a2e] min-h-[100px]"
                                     />
                                 </div>
 
@@ -671,13 +671,13 @@ export function WorkSubmissionComponent() {
                                         onChange={(e) => setNewBountyStake(e.target.value)}
                                         className="bg-gray-900"
                                     />
-                                    <p className="text-xs text-gray-400">Set to 0 if no stake is required to submit</p>
+                                    <p className="text-xs text-foreground/40">Set to 0 if no stake is required to submit</p>
                                 </div>
 
                                 <Button
                                     onClick={handleCreateBounty}
                                     disabled={isCreatingBounty || !newBountyTitle || !newBountyReward}
-                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600"
+                                    className="w-full btn-gold"
                                 >
                                     {isCreatingBounty ? (
                                         <>
@@ -695,18 +695,18 @@ export function WorkSubmissionComponent() {
 
                             <TabsContent value="manage" className="space-y-4 mt-4">
                                 {bounties.length === 0 ? (
-                                    <p className="text-gray-400 text-center py-4">No bounties created yet</p>
+                                    <p className="text-foreground/50 text-center py-4">No bounties created yet</p>
                                 ) : (
                                     <div className="space-y-3 max-h-[400px] overflow-y-auto">
                                         {bounties.map((bounty) => (
                                             <div
                                                 key={bounty.id}
-                                                className="p-4 rounded-lg bg-gray-800/50 border border-gray-700"
+                                                className="p-4 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]"
                                             >
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <h4 className="font-semibold text-white">{bounty.title}</h4>
-                                                        <p className="text-sm text-gray-400">
+                                                        <h4 className="font-semibold text-foreground">{bounty.title}</h4>
+                                                        <p className="text-sm text-foreground/50">
                                                             {ethers.formatEther(bounty.rewardAmount)} PINN44 | {bounty.submissionCount} submissions
                                                         </p>
                                                     </div>
@@ -723,7 +723,7 @@ export function WorkSubmissionComponent() {
                                                             variant="outline"
                                                             onClick={() => handleFundBounty(bounty.id, bounty.rewardAmount)}
                                                             disabled={isFunding}
-                                                            className="border-green-500/50 text-green-400 hover:bg-green-900/20"
+                                                            className="border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10"
                                                         >
                                                             <DollarSign className="w-3 h-3 mr-1" />
                                                             Fund
@@ -737,7 +737,7 @@ export function WorkSubmissionComponent() {
                                                             variant="outline"
                                                             onClick={() => handleStartJudging(bounty.id)}
                                                             disabled={isProcessing}
-                                                            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-900/20"
+                                                            className="border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10"
                                                         >
                                                             <Gavel className="w-3 h-3 mr-1" />
                                                             Start Judging
@@ -779,12 +779,12 @@ export function WorkSubmissionComponent() {
 
             {/* Selected Bounty Detail */}
             {selectedBounty && (
-                <Card className="border-blue-500/50 bg-black/60 backdrop-blur-lg">
+                <Card className="border-[#8247E5]/30 bg-[#1a1a2e]/80 backdrop-blur-lg">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
                                 <CardTitle className="flex items-center gap-2">
-                                    <Award className="w-6 h-6 text-blue-400" />
+                                    <Award className="w-6 h-6 text-[#FFD700]" />
                                     {selectedBounty.title}
                                 </CardTitle>
                                 <CardDescription>{selectedBounty.description}</CardDescription>
@@ -797,22 +797,22 @@ export function WorkSubmissionComponent() {
                     <CardContent className="space-y-6">
                         {/* Bounty Info */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="p-3 rounded-lg bg-green-900/20 border border-green-500/20">
-                                <p className="text-xs text-gray-400">Reward</p>
-                                <p className="text-lg font-bold text-green-400">
+                            <div className="p-3 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
+                                <p className="text-xs text-foreground/50">Reward</p>
+                                <p className="text-lg font-bold text-[#FFD700]">
                                     {ethers.formatEther(selectedBounty.rewardAmount)} PINN44
                                 </p>
                             </div>
-                            <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/20">
-                                <p className="text-xs text-gray-400">Submissions</p>
-                                <p className="text-lg font-bold text-blue-400">{selectedBounty.submissionCount}</p>
+                            <div className="p-3 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/20">
+                                <p className="text-xs text-foreground/50">Submissions</p>
+                                <p className="text-lg font-bold text-[#8247E5]">{selectedBounty.submissionCount}</p>
                             </div>
-                            <div className="p-3 rounded-lg bg-purple-900/20 border border-purple-500/20">
-                                <p className="text-xs text-gray-400">Deadline</p>
-                                <p className="text-lg font-bold text-purple-400">{formatDeadline(selectedBounty.deadline)}</p>
+                            <div className="p-3 rounded-lg bg-[#8247E5]/5 border border-[#8247E5]/20">
+                                <p className="text-xs text-foreground/50">Deadline</p>
+                                <p className="text-lg font-bold text-[#a855f7]">{formatDeadline(selectedBounty.deadline)}</p>
                             </div>
-                            <div className="p-3 rounded-lg bg-gray-800/50 border border-gray-700">
-                                <p className="text-xs text-gray-400">Status</p>
+                            <div className="p-3 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]">
+                                <p className="text-xs text-foreground/50">Status</p>
                                 <Badge className={BountyState[selectedBounty.state as keyof typeof BountyState]?.color || 'bg-gray-500'}>
                                     {BountyState[selectedBounty.state as keyof typeof BountyState]?.label || 'Unknown'}
                                 </Badge>
@@ -824,7 +824,7 @@ export function WorkSubmissionComponent() {
 
                         {/* Submit Work Form - Only for open bounties */}
                         {selectedBounty.state === 0 && selectedBounty.funded && !isDeadlinePassed(selectedBounty.deadline) && (
-                            <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700 space-y-4">
+                            <div className="p-4 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e] space-y-4">
                                 <h3 className="font-semibold flex items-center gap-2">
                                     <Upload className="w-4 h-4" />
                                     Submit Your Work
@@ -832,7 +832,7 @@ export function WorkSubmissionComponent() {
 
                                 {/* Upload Progress */}
                                 {uploadProgress && (
-                                    <div className="p-2 rounded bg-blue-900/30 text-blue-400 text-sm">
+                                    <div className="p-2 rounded bg-[#8247E5]/10 text-[#8247E5] text-sm">
                                         {uploadProgress}
                                     </div>
                                 )}
@@ -845,7 +845,7 @@ export function WorkSubmissionComponent() {
                                             placeholder="ipfs://... or upload a file"
                                             value={fileUri}
                                             onChange={(e) => setFileUri(e.target.value)}
-                                            className="bg-gray-900 flex-1"
+                                            className="bg-[#1a1a2e] flex-1"
                                         />
                                         <label className="cursor-pointer">
                                             <input
@@ -858,7 +858,7 @@ export function WorkSubmissionComponent() {
                                                 type="button"
                                                 variant="outline"
                                                 disabled={isUploading}
-                                                className="border-blue-500/50 hover:bg-blue-900/20"
+                                                className="border-[#8247E5]/50 hover:bg-[#8247E5]/10"
                                                 asChild
                                             >
                                                 <span>
@@ -871,7 +871,7 @@ export function WorkSubmissionComponent() {
                                             </Button>
                                         </label>
                                     </div>
-                                    <p className="text-xs text-gray-500">Upload your work file (images, documents, etc.) to IPFS</p>
+                                    <p className="text-xs text-foreground/40">Upload your work file (images, documents, etc.) to IPFS</p>
                                 </div>
 
                                 {/* Thumbnail Upload */}
@@ -882,7 +882,7 @@ export function WorkSubmissionComponent() {
                                             placeholder="ipfs://... or upload an image"
                                             value={thumbnailUri}
                                             onChange={(e) => setThumbnailUri(e.target.value)}
-                                            className="bg-gray-900 flex-1"
+                                            className="bg-[#1a1a2e] flex-1"
                                         />
                                         <label className="cursor-pointer">
                                             <input
@@ -896,7 +896,7 @@ export function WorkSubmissionComponent() {
                                                 type="button"
                                                 variant="outline"
                                                 disabled={isUploadingThumbnail}
-                                                className="border-purple-500/50 hover:bg-purple-900/20"
+                                                className="border-[#8247E5]/50 hover:bg-[#8247E5]/10"
                                                 asChild
                                             >
                                                 <span>
@@ -909,7 +909,7 @@ export function WorkSubmissionComponent() {
                                             </Button>
                                         </label>
                                     </div>
-                                    <p className="text-xs text-gray-500">Add a preview image for your submission</p>
+                                    <p className="text-xs text-foreground/40">Add a preview image for your submission</p>
                                 </div>
 
                                 {selectedBounty.stakeRequired > BigInt(0) && (
@@ -922,7 +922,7 @@ export function WorkSubmissionComponent() {
                                 <Button
                                     onClick={handleSubmitWork}
                                     disabled={isSubmitting || !fileUri || isUploading || isUploadingThumbnail}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                                    className="w-full btn-gold"
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -943,17 +943,17 @@ export function WorkSubmissionComponent() {
                         <div className="space-y-3">
                             <h3 className="font-semibold">Submissions ({submissions.filter(s => s.status !== 2).length})</h3>
                             {submissions.filter(s => s.status !== 2).length === 0 ? (
-                                <p className="text-gray-400 text-sm">No submissions yet</p>
+                                <p className="text-foreground/50 text-sm">No submissions yet</p>
                             ) : (
                                 <div className="space-y-2">
                                     {submissions.filter(s => s.status !== 2).map((sub) => (
                                         <div
                                             key={sub.id}
                                             className={`p-3 rounded-lg border ${sub.status === 1
-                                                ? 'bg-green-900/20 border-green-500/50'
+                                                ? 'bg-[#004d40]/20 border-[#00897b]/50'
                                                 : sub.status === 2
                                                     ? 'bg-red-900/20 border-red-500/50'
-                                                    : 'bg-gray-800/50 border-gray-700'
+                                                    : 'bg-[#1a1a2e] border-[#2a2a3e]'
                                                 }`}
                                         >
                                             <div className="flex gap-3">
@@ -972,7 +972,7 @@ export function WorkSubmissionComponent() {
                                                                 ? `https://gateway.pinata.cloud/ipfs/${sub.thumbnailUri.slice(7)}`
                                                                 : sub.thumbnailUri}
                                                             alt="Submission thumbnail"
-                                                            className="w-16 h-16 object-cover rounded-lg border border-gray-600 hover:border-blue-400 transition-colors"
+                                                            className="w-16 h-16 object-cover rounded-lg border border-[#2a2a3e] hover:border-[#8247E5] transition-colors"
                                                             onError={(e) => {
                                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                             }}
@@ -984,9 +984,9 @@ export function WorkSubmissionComponent() {
                                                     <div className="flex justify-between items-center flex-wrap gap-2">
                                                         <div className="flex items-center gap-2">
                                                             {sub.thumbnailUri ? (
-                                                                <Image className="w-4 h-4 text-gray-400" />
+                                                                <Image className="w-4 h-4 text-foreground/40" />
                                                             ) : (
-                                                                <FileText className="w-4 h-4 text-gray-400" />
+                                                                <FileText className="w-4 h-4 text-foreground/40" />
                                                             )}
                                                             <span className="text-sm font-mono">{formatAddress(sub.submitter)}</span>
                                                             <Badge className={SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.color || 'bg-gray-500'}>
@@ -1001,7 +1001,7 @@ export function WorkSubmissionComponent() {
                                                                     : sub.fileUri}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="text-blue-400 hover:underline text-sm flex items-center gap-1"
+                                                                className="text-[#FFD700] hover:underline text-sm flex items-center gap-1"
                                                             >
                                                                 View <ExternalLink className="w-3 h-3" />
                                                             </a>
@@ -1014,7 +1014,7 @@ export function WorkSubmissionComponent() {
                                                                         variant="ghost"
                                                                         onClick={() => handleSelectWinner(selectedBounty.id, sub.id)}
                                                                         disabled={isProcessing}
-                                                                        className="text-green-400 hover:bg-green-900/20"
+                                                                        className="text-[#FFD700] hover:bg-[#FFD700]/10"
                                                                     >
                                                                         <Trophy className="w-3 h-3 mr-1" />
                                                                         Winner
@@ -1058,10 +1058,10 @@ export function WorkSubmissionComponent() {
 
             {/* Bounties List */}
             {!selectedBounty && (
-                <Card className="border-blue-500/50 bg-black/60 backdrop-blur-lg">
+                <Card className="border-[#8247E5]/30 bg-[#1a1a2e]/80 backdrop-blur-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Award className="w-6 h-6 text-blue-400" />
+                            <Award className="w-6 h-6 text-[#FFD700]" />
                             Active Bounties
                         </CardTitle>
                         <CardDescription>Browse and submit work for active bounties</CardDescription>
@@ -1069,13 +1069,13 @@ export function WorkSubmissionComponent() {
                     <CardContent>
                         {isLoading ? (
                             <div className="text-center py-8">
-                                <Loader2 className="w-8 h-8 mx-auto animate-spin text-blue-400" />
-                                <p className="text-gray-400 mt-2">Loading bounties...</p>
+                                <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#8247E5]" />
+                                <p className="text-foreground/50 mt-2">Loading bounties...</p>
                             </div>
                         ) : bounties.length === 0 ? (
                             <div className="text-center py-8">
-                                <FileText className="w-12 h-12 mx-auto text-gray-600 mb-4" />
-                                <p className="text-gray-400">No bounties available yet</p>
+                                <FileText className="w-12 h-12 mx-auto text-foreground/20 mb-4" />
+                                <p className="text-foreground/50">No bounties available yet</p>
                                 {isAdmin && (
                                     <Button
                                         variant="outline"
@@ -1092,13 +1092,13 @@ export function WorkSubmissionComponent() {
                                 {bounties.map((bounty) => (
                                     <div
                                         key={bounty.id}
-                                        className="p-4 rounded-lg bg-gray-800/50 border border-gray-700 hover:border-blue-500/50 cursor-pointer transition-colors"
+                                        className="p-4 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e] hover:border-[#8247E5]/50 cursor-pointer transition-colors"
                                         onClick={() => setSelectedBounty(bounty)}
                                     >
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="font-semibold text-white">{bounty.title}</h3>
-                                                <p className="text-sm text-gray-400 mt-1 line-clamp-2">{bounty.description}</p>
+                                                <h3 className="font-semibold text-foreground">{bounty.title}</h3>
+                                                <p className="text-sm text-foreground/50 mt-1 line-clamp-2">{bounty.description}</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-1">
                                                 <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-gray-500'}>
@@ -1110,14 +1110,14 @@ export function WorkSubmissionComponent() {
                                             </div>
                                         </div>
                                         <div className="flex gap-4 mt-3 text-sm">
-                                            <span className="text-green-400">
+                                            <span className="text-[#FFD700]">
                                                 {ethers.formatEther(bounty.rewardAmount)} PINN44
                                             </span>
-                                            <span className="text-gray-400 flex items-center gap-1">
+                                            <span className="text-foreground/50 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {formatDeadline(bounty.deadline)}
                                             </span>
-                                            <span className="text-gray-400">
+                                            <span className="text-foreground/50">
                                                 {bounty.submissionCount} submissions
                                             </span>
                                         </div>

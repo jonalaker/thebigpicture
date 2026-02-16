@@ -121,10 +121,10 @@ export function ContributorVaultComponent() {
 
     if (!CONTRACTS_CONFIG.CONTRIBUTOR_VAULT) {
         return (
-            <Card className="border-yellow-500/50 bg-black/60">
+            <Card className="border-[#FFD700]/30 bg-[#1a1a2e]/80">
                 <CardHeader>
                     <CardTitle>Contributor Vault</CardTitle>
-                    <CardDescription className="text-yellow-400">Contract not yet deployed</CardDescription>
+                    <CardDescription className="text-[#FFD700]">Contract not yet deployed</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -132,10 +132,10 @@ export function ContributorVaultComponent() {
 
     if (!isConnected || !isCorrectNetwork) {
         return (
-            <Card className="border-gray-500/50 bg-black/60">
+            <Card className="border-[#2a2a3e] bg-[#1a1a2e]/80">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Vault className="w-6 h-6 text-green-400" />
+                        <Vault className="w-6 h-6 text-[#FFD700]" />
                         Contributor Vault
                     </CardTitle>
                     <CardDescription>Connect your wallet to Polygon to view your rewards</CardDescription>
@@ -148,10 +148,10 @@ export function ContributorVaultComponent() {
     }
 
     return (
-        <Card className="border-green-500/50 bg-black/60 backdrop-blur-lg">
+        <Card className="border-[#8247E5]/30 bg-[#1a1a2e]/80 backdrop-blur-lg">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Vault className="w-6 h-6 text-green-400" />
+                    <Vault className="w-6 h-6 text-[#FFD700]" />
                     Contributor Vault
                 </CardTitle>
                 <CardDescription>View and claim your contributor rewards</CardDescription>
@@ -181,44 +181,44 @@ export function ContributorVaultComponent() {
 
                 {isLoading ? (
                     <div className="text-center py-8">
-                        <Loader2 className="w-8 h-8 mx-auto animate-spin text-green-400" />
-                        <p className="text-gray-400 mt-2">Loading vault data...</p>
+                        <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#8247E5]" />
+                        <p className="text-foreground/50 mt-2">Loading vault data...</p>
                     </div>
                 ) : (
                     <>
                         {/* Stats Overview */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="p-4 rounded-lg bg-green-900/20 border border-green-500/20">
+                            <div className="p-4 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <TrendingUp className="w-4 h-4 text-green-400" />
-                                    <p className="text-xs text-gray-400">Total Earned</p>
+                                    <TrendingUp className="w-4 h-4 text-[#FFD700]" />
+                                    <p className="text-xs text-foreground/50">Total Earned</p>
                                 </div>
-                                <p className="text-2xl font-bold text-green-400">
+                                <p className="text-2xl font-bold text-[#FFD700]">
                                     {formatTokens(stats?.totalEarned || BigInt(0))}
                                 </p>
-                                <p className="text-xs text-gray-500">PINN44</p>
+                                <p className="text-xs text-foreground/30">PINN44</p>
                             </div>
 
-                            <div className="p-4 rounded-lg bg-blue-900/20 border border-blue-500/20">
+                            <div className="p-4 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/20">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Lock className="w-4 h-4 text-blue-400" />
-                                    <p className="text-xs text-gray-400">Locked Balance</p>
+                                    <Lock className="w-4 h-4 text-[#8247E5]" />
+                                    <p className="text-xs text-foreground/50">Locked Balance</p>
                                 </div>
-                                <p className="text-2xl font-bold text-blue-400">
+                                <p className="text-2xl font-bold text-[#8247E5]">
                                     {formatTokens(lockedBalance)}
                                 </p>
-                                <p className="text-xs text-gray-500">PINN44</p>
+                                <p className="text-xs text-foreground/30">PINN44</p>
                             </div>
 
-                            <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/20">
+                            <div className="p-4 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <Unlock className="w-4 h-4 text-purple-400" />
-                                    <p className="text-xs text-gray-400">Claimable Now</p>
+                                    <Unlock className="w-4 h-4 text-[#FFD700]" />
+                                    <p className="text-xs text-foreground/50">Claimable Now</p>
                                 </div>
-                                <p className="text-2xl font-bold text-purple-400">
+                                <p className="text-2xl font-bold text-[#FFD700]">
                                     {formatTokens(claimableAmount)}
                                 </p>
-                                <p className="text-xs text-gray-500">PINN44</p>
+                                <p className="text-xs text-foreground/30">PINN44</p>
                             </div>
                         </div>
 
@@ -226,8 +226,8 @@ export function ContributorVaultComponent() {
                         {stats && stats.totalEarned > BigInt(0) && (
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Claim Progress</span>
-                                    <span className="text-gray-400">
+                                    <span className="text-foreground/50">Claim Progress</span>
+                                    <span className="text-foreground/50">
                                         {formatTokens(stats.totalClaimed)} / {formatTokens(stats.totalEarned)} PINN44
                                     </span>
                                 </div>
@@ -240,7 +240,7 @@ export function ContributorVaultComponent() {
                             <Button
                                 onClick={handleClaim}
                                 disabled={isClaiming || claimableAmount === BigInt(0)}
-                                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                                className="btn-gold"
                             >
                                 {isClaiming ? (
                                     <>
@@ -259,7 +259,7 @@ export function ContributorVaultComponent() {
                                 onClick={handleEarlyUnlock}
                                 disabled={isEarlyUnlocking || lockedBalance === BigInt(0)}
                                 variant="outline"
-                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                                className="border-[#FFD700]/50 text-[#FFD700] hover:bg-[#FFD700]/10"
                             >
                                 {isEarlyUnlocking ? (
                                     <>
@@ -276,12 +276,12 @@ export function ContributorVaultComponent() {
                         </div>
 
                         {/* Info */}
-                        <div className="p-4 rounded-lg bg-gray-800/30 border border-gray-700">
+                        <div className="p-4 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]">
                             <h4 className="font-semibold mb-2 flex items-center gap-2">
-                                <Lock className="w-4 h-4" />
+                                <Lock className="w-4 h-4 text-[#8247E5]" />
                                 How It Works
                             </h4>
-                            <ul className="text-sm text-gray-400 space-y-1">
+                            <ul className="text-sm text-foreground/50 space-y-1">
                                 <li>• When you receive rewards, 50% is available immediately</li>
                                 <li>• The remaining 50% is locked for 90 days</li>
                                 <li>• After 90 days, locked tokens become claimable</li>

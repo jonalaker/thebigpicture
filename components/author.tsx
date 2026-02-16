@@ -1,58 +1,117 @@
+"use client"
+
 import kevinimage from "../app/images/kevin.jpg"
+import { useEffect, useRef } from "react"
+
 export default function Author() {
+  const sectionRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.querySelectorAll(".animate-on-scroll").forEach((el, i) => {
+              ; (el as HTMLElement).style.animationDelay = `${i * 0.12}s`
+              el.classList.add("animate-fade-in-up")
+            })
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    if (sectionRef.current) observer.observe(sectionRef.current)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <section id="author" className="py-20 md:py-32 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-center mb-12 text-primary">About the Author</h2>
+    <section
+      ref={sectionRef}
+      id="author"
+      className="relative py-24 md:py-36 px-4 sm:px-6 lg:px-8 bg-[#121212]"
+    >
+      <div className="max-w-5xl mx-auto">
+        {/* Section Label */}
+        <div className="animate-on-scroll opacity-0 text-center mb-4">
+          <span className="text-xs uppercase tracking-[0.3em] text-[#FFD700] font-semibold">
+            The Visionary
+          </span>
+        </div>
+
+        <h2
+          className="animate-on-scroll opacity-0 text-center mb-16 text-gradient-gold"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          About the Author
+        </h2>
 
         <div className="grid md:grid-cols-3 gap-12 items-start">
-          {/* Author Image Placeholder */}
-          <div className="md:col-span-1 flex justify-center">
-            <div className="w-48 h-64 bg-muted rounded-lg flex items-center justify-center border border-border">
-              <span className="text-muted-foreground text-sm"><img src={kevinimage.src} alt="kevin"  width={200} height={100} /></span>
+          {/* Author Image */}
+          <div className="animate-on-scroll opacity-0 md:col-span-1 flex justify-center">
+            <div className="relative group">
+              {/* Purple glow ring */}
+              <div className="absolute -inset-1 bg-gradient-to-br from-[#8247E5] to-[#FFD700] rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm" />
+              <div className="relative w-52 h-68 bg-[#1a1a2e] rounded-xl overflow-hidden border border-[#8247E5]/30">
+                <img
+                  src={kevinimage.src}
+                  alt="Jonah Laker"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Film strip accent */}
+              <div className="absolute -left-3 top-4 bottom-4 w-2 flex flex-col gap-1">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex-1 bg-[#8247E5]/20 rounded-sm" />
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Author Bio */}
-          <div className="md:col-span-2 space-y-6 text-foreground/80 leading-relaxed">
-            <div>
-              <h3 className="text-2xl font-serif text-primary mb-4">Jonah Laker</h3>
-              <p>
-                Jonah Laker is a speculative fiction writer and futurist who explores the intersection of technology,
-                consciousness, and human potential. With a background in philosophy and computer science, his work
-                examines the profound questions facing humanity as we approach the singularity and beyond.
-              </p>
-            </div>
+          <div className="animate-on-scroll opacity-0 md:col-span-2">
+            <div className="glass-panel rounded-2xl p-8 hover:glow-purple transition-all duration-500">
+              <h3
+                className="text-2xl mb-6 text-[#8247E5] normal-case"
+                style={{ fontFamily: "var(--font-heading)" }}
+              >
+                Jonah Laker
+              </h3>
 
-            <p>
-              Fascinated by the convergence of artificial intelligence and human evolution, Jonah has spent the last
-              decade researching emerging technologies, consciousness studies, and the philosophical implications of
-              creating thinking machines. His writing reflects a deep commitment to exploring not just what the future
-              might look like, but what it means to maintain our humanity within it.
-            </p>
+              <div className="space-y-4 text-foreground/70 leading-relaxed">
+                <p>
+                  Jonah Laker is a speculative fiction writer and futurist who explores the
+                  intersection of technology, consciousness, and human potential. With a background
+                  in philosophy and computer science, his work examines the profound questions
+                  facing humanity as we approach the singularity and beyond.
+                </p>
+                <p>
+                  Fascinated by the convergence of artificial intelligence and human evolution,
+                  Jonah has spent the last decade researching emerging technologies, consciousness
+                  studies, and the philosophical implications of creating thinking machines.
+                </p>
+                <p>
+                  THE AiGENT is his debut novella—a work that synthesizes his years of research and
+                  creative vision into a compelling narrative set in the near future.
+                </p>
+              </div>
 
-            <p>
-              THE AiGENT is his debut novella—a work that synthesizes his years of research and creative vision into a
-              compelling narrative set in the near future. Through this story, he invites readers to participate in one
-              of the most important conversations of our time: What does it mean to choose your own evolution?
-            </p>
-
-            <p>
-              When not writing, Jonah can be found exploring Sydney's cultural landscape, engaging with AI ethics
-              communities, and contemplating the nature of consciousness over coffee. He believes that speculative
-              fiction is not about predicting the future, but about empowering readers to consciously shape it.
-            </p>
-
-            <div className="pt-4 space-y-2 text-sm">
-              <p>
-                <strong>Residence:</strong> Sydney, Australia
-              </p>
-              <p>
-                <strong>Focus:</strong> Speculative Fiction, AI Ethics, Future Studies
-              </p>
-              <p>
-                <strong>Current Project:</strong> THE AiGENT Novella Series
-              </p>
+              {/* Info chips */}
+              <div className="mt-8 flex flex-wrap gap-3">
+                {[
+                  { label: "Sydney, Australia", icon: "📍" },
+                  { label: "Speculative Fiction", icon: "📖" },
+                  { label: "AI Ethics", icon: "🧠" },
+                  { label: "THE AiGENT Series", icon: "🎬" },
+                ].map((chip, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wider font-semibold text-foreground/50 bg-[#1a1a2e] border border-[#2a2a3e] rounded-full"
+                  >
+                    <span>{chip.icon}</span>
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -4,79 +4,97 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Bold, eye-catching sci-fi color scheme for AiGENT novella */
-  --background: #0a0e27;
-  --foreground: #ffffff;
-  --card: #141b3d;
-  --card-foreground: #ffffff;
-  --popover: #141b3d;
-  --popover-foreground: #ffffff;
-  --primary: #00d9ff;
-  --primary-foreground: #0a0e27;
-  --secondary: #b500ff;
-  --secondary-foreground: #ffffff;
-  --muted: #1e2847;
-  --muted-foreground: #a0aec0;
-  --accent: #ffed4e;
-  --accent-foreground: #0a0e27;
+  /* ═══════════════════════════════════════════════
+     MIDNIGHT CINEMA — Color Palette
+     Deep Charcoal / Cinema Purple / Action Gold
+     ═══════════════════════════════════════════════ */
+  --background: #121212;
+  --foreground: #f0f0f0;
+  --card: #1a1a2e;
+  --card-foreground: #f0f0f0;
+  --popover: #1a1a2e;
+  --popover-foreground: #f0f0f0;
+  --primary: #8247E5;
+  --primary-foreground: #ffffff;
+  --secondary: #2a1a4e;
+  --secondary-foreground: #f0f0f0;
+  --muted: #1e1e2f;
+  --muted-foreground: #9ca3af;
+  --accent: #FFD700;
+  --accent-foreground: #121212;
   --destructive: #ff1744;
   --destructive-foreground: #ffffff;
-  --border: #1e2847;
-  --input: #0f1433;
-  --ring: #00d9ff;
-  --chart-1: #00d9ff;
-  --chart-2: #b500ff;
-  --chart-3: #ffed4e;
+  --border: #2a2a3e;
+  --input: #1a1a2e;
+  --ring: #8247E5;
+  --chart-1: #8247E5;
+  --chart-2: #FFD700;
+  --chart-3: #a855f7;
   --chart-4: #ff1744;
   --chart-5: #00ff88;
   --radius: 0.5rem;
-  --sidebar: oklch(0.05 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.55 0.3 199.2);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.05 0 0);
-  --sidebar-border: oklch(0.15 0 0);
-  --sidebar-ring: oklch(0.55 0.3 199.2);
+
+  /* Sidebar (kept compatible) */
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8247E5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1e2f;
+  --sidebar-accent-foreground: #f0f0f0;
+  --sidebar-border: #2a2a3e;
+  --sidebar-ring: #8247E5;
+
+  /* Midnight Cinema Custom Tokens */
+  --midnight-charcoal: #121212;
+  --midnight-deep: #0a0a0a;
+  --cinema-purple: #8247E5;
+  --cinema-purple-light: #a855f7;
+  --cinema-purple-dark: #5b2bba;
+  --action-gold: #FFD700;
+  --action-gold-light: #ffe44d;
+  --action-gold-dark: #cc9900;
+  --glass-bg: rgba(26, 26, 46, 0.6);
+  --glass-border: rgba(130, 71, 229, 0.2);
 }
 
 .dark {
-  --background: #0a0e27;
-  --foreground: #ffffff;
-  --card: #141b3d;
-  --card-foreground: #ffffff;
-  --popover: #141b3d;
-  --popover-foreground: #ffffff;
-  --primary: #00d9ff;
-  --primary-foreground: #0a0e27;
-  --secondary: #b500ff;
-  --secondary-foreground: #ffffff;
-  --muted: #1e2847;
-  --muted-foreground: #a0aec0;
-  --accent: #ffed4e;
-  --accent-foreground: #0a0e27;
+  --background: #121212;
+  --foreground: #f0f0f0;
+  --card: #1a1a2e;
+  --card-foreground: #f0f0f0;
+  --popover: #1a1a2e;
+  --popover-foreground: #f0f0f0;
+  --primary: #8247E5;
+  --primary-foreground: #ffffff;
+  --secondary: #2a1a4e;
+  --secondary-foreground: #f0f0f0;
+  --muted: #1e1e2f;
+  --muted-foreground: #9ca3af;
+  --accent: #FFD700;
+  --accent-foreground: #121212;
   --destructive: #ff1744;
   --destructive-foreground: #ffffff;
-  --border: #1e2847;
-  --input: #0f1433;
-  --ring: #00d9ff;
-  --chart-1: #00d9ff;
-  --chart-2: #b500ff;
-  --chart-3: #ffed4e;
+  --border: #2a2a3e;
+  --input: #1a1a2e;
+  --ring: #8247E5;
+  --chart-1: #8247E5;
+  --chart-2: #FFD700;
+  --chart-3: #a855f7;
   --chart-4: #ff1744;
   --chart-5: #00ff88;
-  --sidebar: oklch(0.05 0 0);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.55 0.3 199.2);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.95 0 0);
-  --sidebar-accent-foreground: oklch(0.05 0 0);
-  --sidebar-border: oklch(0.15 0 0);
-  --sidebar-ring: oklch(0.55 0.3 199.2);
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8247E5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1e2f;
+  --sidebar-accent-foreground: #f0f0f0;
+  --sidebar-border: #2a2a3e;
+  --sidebar-ring: #8247E5;
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -119,26 +137,20 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
     @apply bg-background text-foreground;
   }
 
+  /* Movie Poster Typography — bold, uppercase, sans-serif for headings */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    @apply font-serif font-bold tracking-tight;
+    font-family: var(--font-heading);
+    @apply font-bold tracking-wider uppercase;
   }
 
   h1 {
@@ -159,15 +171,243 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar — Midnight Cinema */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-muted;
+  background: #0a0a0a;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary rounded;
+  background: #8247E5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a855f7;
+}
+
+/* ═══════════════════════════════════════════════
+   MIDNIGHT CINEMA — Utility Classes
+   ═══════════════════════════════════════════════ */
+
+/* Purple glow effect */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(130, 71, 229, 0.3),
+    0 0 60px rgba(130, 71, 229, 0.1);
+}
+
+.glow-purple-intense {
+  box-shadow: 0 0 30px rgba(130, 71, 229, 0.5),
+    0 0 80px rgba(130, 71, 229, 0.2);
+}
+
+/* Gold glow effect */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3),
+    0 0 60px rgba(255, 215, 0, 0.1);
+}
+
+.glow-gold-intense {
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5),
+    0 0 80px rgba(255, 215, 0, 0.2);
+}
+
+/* Glassmorphism panel */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Gradient text utilities */
+.text-gradient-purple {
+  background: linear-gradient(135deg, #8247E5, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #FFD700, #ffe44d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-purple-gold {
+  background: linear-gradient(135deg, #8247E5, #a855f7, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ═══════════════════════════════════════════════
+   MIDNIGHT CINEMA — Animations
+   ═══════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(130, 71, 229, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(130, 71, 229, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
+.delay-600 {
+  animation-delay: 0.6s;
+}
+
+/* Gold shimmer button effect */
+.btn-gold {
+  background: linear-gradient(135deg, #FFD700, #ffe44d, #FFD700);
+  background-size: 200% 100%;
+  color: #121212;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+  animation: shimmer 2s linear infinite;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5),
+    0 0 80px rgba(255, 215, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Purple gradient button */
+.btn-purple {
+  background: linear-gradient(135deg, #8247E5, #a855f7);
+  color: #ffffff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+.btn-purple:hover {
+  box-shadow: 0 0 30px rgba(130, 71, 229, 0.5),
+    0 0 80px rgba(130, 71, 229, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Section divider — purple gradient line */
+.divider-purple {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #8247E5, transparent);
+}
+
+/* Film grain overlay (subtle texture) */
+.film-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
 }

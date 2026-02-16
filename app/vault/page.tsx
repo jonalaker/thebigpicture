@@ -15,14 +15,17 @@ export const metadata: Metadata = {
 
 export default function VaultPage() {
     return (
-        <main className="min-h-screen bg-gradient-to-br from-green-900/20 via-black to-emerald-900/20">
+        <main className="min-h-screen bg-[#121212]">
             <Header />
-            <div className="container mx-auto px-4 py-20">
+            <div className="container mx-auto px-4 pt-28 pb-20">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                    <h1
+                        className="text-4xl font-bold text-center mb-3 text-gradient-gold"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                    >
                         Contributor Vault
                     </h1>
-                    <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
+                    <p className="text-center text-foreground/50 mb-12 max-w-2xl mx-auto">
                         Track your contributor earnings and claim unlocked rewards.
                         50% of rewards are available immediately, with 50% vested over 90 days.
                     </p>

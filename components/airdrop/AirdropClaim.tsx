@@ -176,48 +176,48 @@ export function AirdropClaim() {
     }, [isConnected, isCorrectNetwork, address, fingerprint, checkClaimStatus]);
 
     return (
-        <section className="py-20 px-4 bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20 min-h-[80vh] flex items-center">
+        <section className="py-20 px-4 bg-[#121212] min-h-[80vh] flex items-center">
             <div className="max-w-2xl mx-auto w-full">
-                <Card className="border-purple-500/50 bg-black/60 backdrop-blur-lg">
+                <Card className="border-[#8247E5]/30 bg-[#1a1a2e]/80 backdrop-blur-lg">
                     <CardHeader className="text-center">
                         <div className="relative">
-                            <Gift className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-pulse" />
+                            <Gift className="w-16 h-16 mx-auto mb-4 text-[#FFD700] animate-pulse" />
                         </div>
-                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        <CardTitle className="text-3xl font-bold text-gradient-purple-gold">
                             Free PINN44 Airdrop
                         </CardTitle>
-                        <CardDescription className="text-gray-300">
+                        <CardDescription className="text-foreground/60">
                             Claim {AIRDROP_AMOUNT} PINN44 tokens - No gas fees required!
                         </CardDescription>
                     </CardHeader>
 
                     <CardContent className="space-y-6">
                         {/* Lock Mechanism Info Banner */}
-                        <Alert className="bg-blue-900/20 border-blue-500/50">
-                            <Info className="h-4 w-4 text-blue-400" />
-                            <AlertTitle className="text-blue-400">Token Distribution</AlertTitle>
-                            <AlertDescription className="text-gray-300 space-y-2">
+                        <Alert className="bg-[#8247E5]/10 border-[#8247E5]/30">
+                            <Info className="h-4 w-4 text-[#8247E5]" />
+                            <AlertTitle className="text-[#8247E5]">Token Distribution</AlertTitle>
+                            <AlertDescription className="text-foreground/60 space-y-2">
                                 <p>Your airdrop tokens are distributed with anti-dump protection:</p>
                                 <ul className="list-disc list-inside text-sm mt-2 space-y-1">
-                                    <li><strong className="text-green-400">{immediateAmount} PINN44 (10%)</strong> — Available instantly</li>
-                                    <li><strong className="text-purple-400">{lockedAmount} PINN44 (90%)</strong> — Locked for {LOCK_DURATION_MONTHS} months OR until first contribution</li>
+                                    <li><strong className="text-[#FFD700]">{immediateAmount} PINN44 (10%)</strong> — Available instantly</li>
+                                    <li><strong className="text-[#8247E5]">{lockedAmount} PINN44 (90%)</strong> — Locked for {LOCK_DURATION_MONTHS} months OR until first contribution</li>
                                 </ul>
                             </AlertDescription>
                         </Alert>
 
                         {/* Features */}
                         <div className="grid grid-cols-3 gap-4 mb-6">
-                            <div className="text-center p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                                <Gift className="w-6 h-6 mx-auto mb-2 text-green-400" />
-                                <p className="text-xs text-gray-400">Free Gas</p>
+                            <div className="text-center p-3 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
+                                <Gift className="w-6 h-6 mx-auto mb-2 text-[#FFD700]" />
+                                <p className="text-xs text-foreground/40">Free Gas</p>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                                <Lock className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-                                <p className="text-xs text-gray-400">Anti-Dump Lock</p>
+                            <div className="text-center p-3 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/20">
+                                <Lock className="w-6 h-6 mx-auto mb-2 text-[#8247E5]" />
+                                <p className="text-xs text-foreground/40">Anti-Dump Lock</p>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-pink-500/10 border border-pink-500/20">
-                                <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-pink-400" />
-                                <p className="text-xs text-gray-400">Instant Claim</p>
+                            <div className="text-center p-3 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
+                                <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-[#FFD700]" />
+                                <p className="text-xs text-foreground/40">Instant Claim</p>
                             </div>
                         </div>
 
@@ -279,11 +279,11 @@ export function AirdropClaim() {
                         {/* Wallet Not Connected */}
                         {!isConnected && (
                             <div className="text-center space-y-4">
-                                <p className="text-gray-400">Connect your wallet to claim your free tokens!</p>
+                                <p className="text-foreground/50">Connect your wallet to claim your free tokens!</p>
                                 <Button
                                     onClick={connect}
                                     disabled={isConnecting || !isMetaMaskAvailable}
-                                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                                    className="w-full btn-gold"
                                 >
                                     {isConnecting ? (
                                         <>
@@ -311,7 +311,7 @@ export function AirdropClaim() {
                                 </Alert>
                                 <Button
                                     onClick={switchToPolygon}
-                                    className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                                    className="w-full bg-gradient-to-r from-[#FFD700] to-[#cc9900] hover:from-[#ffe44d] hover:to-[#FFD700] text-[#121212] font-bold"
                                 >
                                     Switch Network
                                 </Button>
@@ -322,22 +322,22 @@ export function AirdropClaim() {
                         {isConnected && isCorrectNetwork && (
                             <div className="space-y-4">
                                 {/* Wallet Info */}
-                                <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+                                <div className="p-4 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-gray-400">Connected Wallet</span>
-                                        <span className="text-white font-mono">{formatAddress(address!)}</span>
+                                        <span className="text-foreground/50">Connected Wallet</span>
+                                        <span className="text-foreground font-mono">{formatAddress(address!)}</span>
                                     </div>
                                     <div className="flex justify-between items-center mt-2">
-                                        <span className="text-gray-400">PINN44 Balance</span>
-                                        <span className="text-purple-400 font-semibold">{parseFloat(tokenBalance).toLocaleString()} PINN44</span>
+                                        <span className="text-foreground/50">PINN44 Balance</span>
+                                        <span className="text-[#FFD700] font-semibold">{parseFloat(tokenBalance).toLocaleString()} PINN44</span>
                                     </div>
                                 </div>
 
                                 {/* Checking Status */}
                                 {claimStatus === 'checking' && (
                                     <div className="text-center py-8">
-                                        <Loader2 className="w-8 h-8 mx-auto animate-spin text-purple-400" />
-                                        <p className="text-gray-400 mt-2">Checking eligibility...</p>
+                                        <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#8247E5]" />
+                                        <p className="text-foreground/50 mt-2">Checking eligibility...</p>
                                     </div>
                                 )}
 
@@ -399,25 +399,25 @@ export function AirdropClaim() {
                                 {/* Eligible and Can Claim */}
                                 {claimStatus === 'eligible' && (
                                     <div className="space-y-4">
-                                        <div className="p-4 rounded-lg bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-500/30">
+                                        <div className="p-4 rounded-lg bg-[#1a1a2e] border border-[#8247E5]/30">
                                             <div className="text-center mb-4">
-                                                <p className="text-gray-400 text-sm">Your Free Airdrop</p>
-                                                <p className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                                <p className="text-foreground/50 text-sm">Your Free Airdrop</p>
+                                                <p className="text-4xl font-bold text-gradient-purple-gold">
                                                     {AIRDROP_AMOUNT} PINN44
                                                 </p>
                                             </div>
 
                                             {/* Breakdown */}
                                             <div className="grid grid-cols-2 gap-4 mt-4">
-                                                <div className="p-3 rounded-lg bg-green-900/30 border border-green-500/30 text-center">
-                                                    <p className="text-xs text-gray-400">Immediate (10%)</p>
-                                                    <p className="text-xl font-bold text-green-400">{immediateAmount}</p>
-                                                    <p className="text-xs text-green-300">Available now</p>
+                                                <div className="p-3 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/30 text-center">
+                                                    <p className="text-xs text-foreground/40">Immediate (10%)</p>
+                                                    <p className="text-xl font-bold text-[#FFD700]">{immediateAmount}</p>
+                                                    <p className="text-xs text-[#FFD700]/70">Available now</p>
                                                 </div>
-                                                <div className="p-3 rounded-lg bg-purple-900/30 border border-purple-500/30 text-center">
-                                                    <p className="text-xs text-gray-400">Locked (90%)</p>
-                                                    <p className="text-xl font-bold text-purple-400">{lockedAmount}</p>
-                                                    <p className="text-xs text-purple-300">{LOCK_DURATION_MONTHS} months lock</p>
+                                                <div className="p-3 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/30 text-center">
+                                                    <p className="text-xs text-foreground/40">Locked (90%)</p>
+                                                    <p className="text-xl font-bold text-[#8247E5]">{lockedAmount}</p>
+                                                    <p className="text-xs text-[#a855f7]">{LOCK_DURATION_MONTHS} months lock</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -425,7 +425,7 @@ export function AirdropClaim() {
                                         <Button
                                             onClick={claimAirdrop}
                                             disabled={isClaiming}
-                                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-6 text-lg"
+                                            className="w-full btn-gold py-6 text-lg"
                                         >
                                             {isClaiming ? (
                                                 <>
@@ -440,7 +440,7 @@ export function AirdropClaim() {
                                             )}
                                         </Button>
 
-                                        <p className="text-xs text-center text-gray-500">
+                                        <p className="text-xs text-center text-foreground/30">
                                             ✨ No gas fees - We pay for everything!
                                         </p>
                                     </div>

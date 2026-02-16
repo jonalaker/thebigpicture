@@ -15,14 +15,17 @@ export const metadata: Metadata = {
 
 export default function StakingPage() {
     return (
-        <main className="min-h-screen bg-gradient-to-br from-purple-900/20 via-black to-blue-900/20">
+        <main className="min-h-screen bg-[#121212]">
             <Header />
-            <div className="container mx-auto px-4 py-20">
+            <div className="container mx-auto px-4 pt-28 pb-20">
                 <div className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl font-bold text-center mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <h1
+                        className="text-4xl font-bold text-center mb-3 text-gradient-purple-gold"
+                        style={{ fontFamily: 'var(--font-heading)' }}
+                    >
                         Staking & Vesting
                     </h1>
-                    <p className="text-center text-gray-400 mb-12 max-w-2xl mx-auto">
+                    <p className="text-center text-foreground/50 mb-12 max-w-2xl mx-auto">
                         Stake your PINN44 tokens to access higher-tier tasks and earn staking rewards.
                         View and claim your vested tokens as they unlock.
                     </p>
