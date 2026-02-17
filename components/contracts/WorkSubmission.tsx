@@ -413,7 +413,7 @@ export function WorkSubmissionComponent() {
     const formatDeadline = (timestamp: bigint) => {
         if (timestamp === BigInt(0)) return 'No deadline';
         const date = new Date(Number(timestamp) * 1000);
-        return date.toLocaleDateString();
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
     const isDeadlinePassed = (deadline: bigint) => {
@@ -507,8 +507,8 @@ export function WorkSubmissionComponent() {
 
             const ipfsUri = `ipfs://${cid}`;
             setUri(ipfsUri);
-            setUploadProgress(`✓ Uploaded successfully!`);
-            setSuccessMessage(`File uploaded to IPFS! (${fileSizeMB} MB)`);
+            setUploadProgress(`✓ File accepted! Complete upload using Submit Work button below`);
+            setSuccessMessage(`File accepted! (${fileSizeMB} MB) — Use the Submit Work button to finish.`);
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Upload failed';
