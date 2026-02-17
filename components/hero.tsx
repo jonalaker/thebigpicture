@@ -85,7 +85,7 @@ export default function Hero() {
         {/* Tagline */}
         <div className="animate-on-scroll opacity-0 mb-6">
           <span className="inline-block px-4 py-1.5 text-xs uppercase tracking-[0.3em] font-semibold text-[#FFD700] border border-[#FFD700]/30 rounded-full bg-[#FFD700]/5">
-            🎬 Trailblazing Film Production
+            🎬 Trailblazing Film Production Technology
           </span>
         </div>
 
