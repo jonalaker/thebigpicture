@@ -261,10 +261,10 @@ export function StakingVestingComponent() {
 
                 {/* Success */}
                 {txHash && (
-                    <Alert className="bg-green-900/20 border-green-500/50">
-                        <AlertTitle className="text-green-400">Success!</AlertTitle>
+                    <Alert className="bg-[#004d40]/20 border-[#00897b]/40">
+                        <AlertTitle className="text-[#00897b]">Success!</AlertTitle>
                         <AlertDescription>
-                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">
+                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-[#FFD700] hover:underline">
                                 View transaction
                             </a>
                         </AlertDescription>
@@ -334,7 +334,7 @@ export function StakingVestingComponent() {
                                                     <Unlock className="w-4 h-4" /> Unlocked
                                                 </span>
                                             ) : (
-                                                <span className="flex items-center gap-1 text-yellow-400 text-sm">
+                                                <span className="flex items-center gap-1 text-[#FFD700] text-sm">
                                                     <Lock className="w-4 h-4" /> Locked
                                                 </span>
                                             )}
@@ -354,7 +354,7 @@ export function StakingVestingComponent() {
                                         {!isUnlocked(schedule) && (
                                             <div className="mt-3 p-2 rounded bg-[#1a1a2e]">
                                                 <div className="flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-yellow-400" />
+                                                    <Clock className="w-4 h-4 text-[#FFD700]" />
                                                     <span className="text-sm text-foreground/60">Unlocks on: <strong>{getUnlockDate(schedule)}</strong></span>
                                                 </div>
                                                 {schedule.vestType === 2 && !schedule.contributionUnlocked && (

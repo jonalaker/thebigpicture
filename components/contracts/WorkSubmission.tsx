@@ -61,17 +61,17 @@ interface Submission {
 }
 
 const BountyState = {
-    0: { label: 'Open', color: 'bg-green-500' },
-    1: { label: 'Judging', color: 'bg-yellow-500' },
-    2: { label: 'Completed', color: 'bg-blue-500' },
+    0: { label: 'Open', color: 'bg-[#00897b]' },
+    1: { label: 'Judging', color: 'bg-[#FFD700] text-[#121212]' },
+    2: { label: 'Completed', color: 'bg-[#8247E5]' },
     3: { label: 'Cancelled', color: 'bg-red-500' },
 };
 
 const SubmissionStatus = {
-    0: { label: 'Pending', color: 'bg-gray-500' },
-    1: { label: 'Winner', color: 'bg-green-500' },
+    0: { label: 'Pending', color: 'bg-[#2a2a3e]' },
+    1: { label: 'Winner', color: 'bg-[#FFD700] text-[#121212]' },
     2: { label: 'Rejected', color: 'bg-red-500' },
-    3: { label: 'Refunded', color: 'bg-blue-500' },
+    3: { label: 'Refunded', color: 'bg-[#8247E5]' },
 };
 
 export function WorkSubmissionComponent() {
@@ -647,7 +647,7 @@ export function WorkSubmissionComponent() {
                                             placeholder="e.g., 500"
                                             value={newBountyReward}
                                             onChange={(e) => setNewBountyReward(e.target.value)}
-                                            className="bg-gray-900"
+                                            className="bg-[#1a1a2e]"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -657,7 +657,7 @@ export function WorkSubmissionComponent() {
                                             placeholder="7"
                                             value={newBountyDeadlineDays}
                                             onChange={(e) => setNewBountyDeadlineDays(e.target.value)}
-                                            className="bg-gray-900"
+                                            className="bg-[#1a1a2e]"
                                         />
                                     </div>
                                 </div>
@@ -669,7 +669,7 @@ export function WorkSubmissionComponent() {
                                         placeholder="0 for no stake"
                                         value={newBountyStake}
                                         onChange={(e) => setNewBountyStake(e.target.value)}
-                                        className="bg-gray-900"
+                                        className="bg-[#1a1a2e]"
                                     />
                                     <p className="text-xs text-foreground/40">Set to 0 if no stake is required to submit</p>
                                 </div>
@@ -710,7 +710,7 @@ export function WorkSubmissionComponent() {
                                                             {ethers.formatEther(bounty.rewardAmount)} PINN44 | {bounty.submissionCount} submissions
                                                         </p>
                                                     </div>
-                                                    <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-gray-500'}>
+                                                    <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-[#2a2a3e]'}>
                                                         {BountyState[bounty.state as keyof typeof BountyState]?.label || 'Unknown'}
                                                     </Badge>
                                                 </div>
@@ -813,11 +813,11 @@ export function WorkSubmissionComponent() {
                             </div>
                             <div className="p-3 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]">
                                 <p className="text-xs text-foreground/50">Status</p>
-                                <Badge className={BountyState[selectedBounty.state as keyof typeof BountyState]?.color || 'bg-gray-500'}>
+                                <Badge className={BountyState[selectedBounty.state as keyof typeof BountyState]?.color || 'bg-[#2a2a3e]'}>
                                     {BountyState[selectedBounty.state as keyof typeof BountyState]?.label || 'Unknown'}
                                 </Badge>
                                 {!selectedBounty.funded && selectedBounty.state === 0 && (
-                                    <p className="text-xs text-yellow-400 mt-1">⚠️ Not funded</p>
+                                    <p className="text-xs text-[#FFD700] mt-1">⚠️ Not funded</p>
                                 )}
                             </div>
                         </div>
@@ -913,7 +913,7 @@ export function WorkSubmissionComponent() {
                                 </div>
 
                                 {selectedBounty.stakeRequired > BigInt(0) && (
-                                    <p className="text-sm text-yellow-400">
+                                    <p className="text-sm text-[#FFD700]">
                                         ⚠️ This bounty requires a stake of {ethers.formatEther(selectedBounty.stakeRequired)}
                                         {selectedBounty.stakeToken === ethers.ZeroAddress ? ' MATIC' : ' tokens'}
                                     </p>
@@ -989,7 +989,7 @@ export function WorkSubmissionComponent() {
                                                                 <FileText className="w-4 h-4 text-foreground/40" />
                                                             )}
                                                             <span className="text-sm font-mono">{formatAddress(sub.submitter)}</span>
-                                                            <Badge className={SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.color || 'bg-gray-500'}>
+                                                            <Badge className={SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.color || 'bg-[#2a2a3e]'}>
                                                                 {SubmissionStatus[sub.status as keyof typeof SubmissionStatus]?.label || 'Unknown'}
                                                             </Badge>
                                                         </div>
@@ -1035,7 +1035,7 @@ export function WorkSubmissionComponent() {
                                                                             variant="ghost"
                                                                             onClick={() => handleRejectSubmission(sub.id, true)}
                                                                             disabled={isProcessing}
-                                                                            className="text-orange-400 hover:bg-orange-900/20"
+                                                                            className="text-destructive hover:bg-destructive/10"
                                                                             title="Reject and slash stake"
                                                                         >
                                                                             <Trash2 className="w-3 h-3" />
@@ -1101,11 +1101,11 @@ export function WorkSubmissionComponent() {
                                                 <p className="text-sm text-foreground/50 mt-1 line-clamp-2">{bounty.description}</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-1">
-                                                <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-gray-500'}>
+                                                <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-[#2a2a3e]'}>
                                                     {BountyState[bounty.state as keyof typeof BountyState]?.label || 'Unknown'}
                                                 </Badge>
                                                 {!bounty.funded && bounty.state === 0 && (
-                                                    <span className="text-xs text-yellow-400">Not funded</span>
+                                                    <span className="text-xs text-[#FFD700]">Not funded</span>
                                                 )}
                                             </div>
                                         </div>

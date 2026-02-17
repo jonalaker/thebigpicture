@@ -77,22 +77,22 @@ export function ConnectWalletBanner({ onConnect, className = '' }: ConnectWallet
     }
 
     return (
-        <div className={`w-full bg-gradient-to-r from-orange-600/20 to-yellow-600/20 border border-orange-500/30 rounded-lg p-4 mb-6 ${className}`}>
+        <div className={`w-full bg-[#8247E5]/10 border border-[#8247E5]/30 rounded-lg p-4 mb-6 ${className}`}>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500/20 rounded-full">
-                        <Wallet className="w-6 h-6 text-orange-400" />
+                    <div className="p-2 bg-[#8247E5]/20 rounded-full">
+                        <Wallet className="w-6 h-6 text-[#8247E5]" />
                     </div>
                     <div>
-                        <h3 className="font-semibold text-white">Connect Your Wallet</h3>
-                        <p className="text-sm text-gray-400">Connect MetaMask to access this feature</p>
+                        <h3 className="font-semibold text-foreground">Connect Your Wallet</h3>
+                        <p className="text-sm text-foreground/40">Connect MetaMask to access this feature</p>
                     </div>
                 </div>
 
                 <Button
                     onClick={connectWallet}
                     disabled={isConnecting}
-                    className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold px-6"
+                    className="btn-gold px-6"
                 >
                     {isConnecting ? (
                         <>
@@ -173,9 +173,9 @@ export function ConnectWalletButton({ onConnect, className = '' }: ConnectWallet
 
     if (address) {
         return (
-            <div className={`flex items-center gap-2 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-full text-sm ${className}`}>
-                <CheckCircle className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 font-medium">
+            <div className={`flex items-center gap-2 px-3 py-1.5 bg-[#FFD700]/10 border border-[#FFD700]/20 rounded-full text-sm ${className}`}>
+                <CheckCircle className="w-4 h-4 text-[#FFD700]" />
+                <span className="text-[#FFD700] font-medium">
                     {address.slice(0, 6)}...{address.slice(-4)}
                 </span>
             </div>
@@ -187,7 +187,7 @@ export function ConnectWalletButton({ onConnect, className = '' }: ConnectWallet
             onClick={connectWallet}
             disabled={isConnecting}
             size="sm"
-            className={`bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold ${className}`}
+            className={`btn-gold font-semibold ${className}`}
         >
             {isConnecting ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

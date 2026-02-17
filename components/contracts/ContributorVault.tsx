@@ -168,11 +168,11 @@ export function ContributorVaultComponent() {
 
                 {/* Success */}
                 {txHash && (
-                    <Alert className="bg-green-900/20 border-green-500/50">
-                        <CheckCircle2 className="h-4 w-4 text-green-400" />
-                        <AlertTitle className="text-green-400">Success!</AlertTitle>
+                    <Alert className="bg-[#004d40]/20 border-[#00897b]/40">
+                        <CheckCircle2 className="h-4 w-4 text-[#00897b]" />
+                        <AlertTitle className="text-[#00897b]">Success!</AlertTitle>
                         <AlertDescription>
-                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">
+                            <a href={getExplorerTxUrl(txHash)} target="_blank" rel="noopener noreferrer" className="text-[#FFD700] hover:underline">
                                 View transaction
                             </a>
                         </AlertDescription>

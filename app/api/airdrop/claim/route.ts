@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 // Configuration
 const AIRDROP_AMOUNT = process.env.AIRDROP_AMOUNT || '100';
 const IMMEDIATE_PERCENTAGE = 10;
+const POL_GIFT_AMOUNT = process.env.POL_GIFT_AMOUNT || '0.20';
 
 // StakingVesting ABI (only functions we need)
 const STAKING_VESTING_ABI = [
@@ -127,6 +128,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // Check relayer has enough MATIC for gas + POL gift
+        const relayerMaticBalance = await provider.getBalance(relayerWallet.address);
+        const polGiftWei = ethers.parseEther(POL_GIFT_AMOUNT);
+        const minMaticNeeded = polGiftWei + ethers.parseEther('0.05'); // gift + buffer for gas
+        if (relayerMaticBalance < minMaticNeeded) {
+            console.error('Relayer wallet has insufficient MATIC:', ethers.formatEther(relayerMaticBalance));
+            return NextResponse.json(
+                { error: 'Relayer wallet has insufficient gas funds. Please contact support.' },
+                { status: 503 }
+            );
+        }
+
         // Step 1: Send 10% immediately to user
         console.log(`Sending ${ethers.formatEther(immediateAmount)} PINN44 to ${walletAddress}`);
         const transferTx = await tokenContract.transfer(walletAddress, immediateAmount);
@@ -152,14 +165,32 @@ export async function POST(request: NextRequest) {
             timestamp: Date.now(),
         });
 
+        // Step 4: Send POL (MATIC) gift so the user has gas to trade/transfer
+        let polTxHash = '';
+        try {
+            console.log(`Sending ${POL_GIFT_AMOUNT} POL to ${walletAddress} as gas gift`);
+            const polTx = await relayerWallet.sendTransaction({
+                to: walletAddress,
+                value: ethers.parseEther(POL_GIFT_AMOUNT),
+            });
+            const polReceipt = await polTx.wait();
+            polTxHash = polReceipt?.hash || polTx.hash;
+            console.log(`POL gift sent to ${walletAddress}. TX: ${polTxHash}`);
+        } catch (polError) {
+            // Don't fail the entire airdrop if POL gift fails
+            console.error('POL gift failed (airdrop still succeeded):', polError);
+        }
+
         console.log(`Airdrop successful for ${walletAddress}. TX: ${transferReceipt.hash}`);
 
         return NextResponse.json({
             success: true,
             txHash: transferReceipt.hash,
+            polTxHash: polTxHash || undefined,
+            polGifted: polTxHash ? POL_GIFT_AMOUNT : '0',
             immediateAmount: ethers.formatEther(immediateAmount),
             lockedAmount: ethers.formatEther(lockedAmount),
-            message: `Successfully claimed ${AIRDROP_AMOUNT} PINN44 tokens!`,
+            message: `Successfully claimed ${AIRDROP_AMOUNT} PINN44 tokens!${polTxHash ? ` You also received ${POL_GIFT_AMOUNT} POL for gas.` : ''}`,
         });
 
     } catch (error) {

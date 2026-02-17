@@ -201,6 +201,7 @@ export function AirdropClaim() {
                                 <ul className="list-disc list-inside text-sm mt-2 space-y-1">
                                     <li><strong className="text-[#FFD700]">{immediateAmount} PINN44 (10%)</strong> — Available instantly</li>
                                     <li><strong className="text-[#8247E5]">{lockedAmount} PINN44 (90%)</strong> — Locked for {LOCK_DURATION_MONTHS} months OR until first contribution</li>
+                                    <li><strong className="text-[#FFD700]">0.20 POL</strong> — Gas gift so you can trade immediately</li>
                                 </ul>
                             </AlertDescription>
                         </Alert>
@@ -209,7 +210,7 @@ export function AirdropClaim() {
                         <div className="grid grid-cols-3 gap-4 mb-6">
                             <div className="text-center p-3 rounded-lg bg-[#FFD700]/5 border border-[#FFD700]/20">
                                 <Gift className="w-6 h-6 mx-auto mb-2 text-[#FFD700]" />
-                                <p className="text-xs text-foreground/40">Free Gas</p>
+                                <p className="text-xs text-foreground/40">Free Gas + 0.20 POL</p>
                             </div>
                             <div className="text-center p-3 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/20">
                                 <Lock className="w-6 h-6 mx-auto mb-2 text-[#8247E5]" />
@@ -232,18 +233,18 @@ export function AirdropClaim() {
 
                         {/* Success - Just Claimed */}
                         {txHash && (
-                            <Alert className="bg-green-900/20 border-green-500/50">
-                                <CheckCircle2 className="h-4 w-4 text-green-400" />
-                                <AlertTitle className="text-green-400">Tokens Claimed!</AlertTitle>
-                                <AlertDescription className="text-green-200 space-y-2">
+                            <Alert className="bg-[#004d40]/20 border-[#00897b]/40">
+                                <CheckCircle2 className="h-4 w-4 text-[#00897b]" />
+                                <AlertTitle className="text-[#00897b]">Tokens Claimed!</AlertTitle>
+                                <AlertDescription className="text-foreground/60 space-y-2">
                                     <div className="grid grid-cols-2 gap-4 mt-2">
-                                        <div className="p-2 rounded bg-green-900/30">
-                                            <p className="text-xs text-gray-400">Received Now</p>
-                                            <p className="text-lg font-bold text-green-400">{immediateAmount} PINN44</p>
+                                        <div className="p-2 rounded bg-[#FFD700]/10">
+                                            <p className="text-xs text-foreground/40">Received Now</p>
+                                            <p className="text-lg font-bold text-[#FFD700]">{immediateAmount} PINN44</p>
                                         </div>
-                                        <div className="p-2 rounded bg-purple-900/30">
-                                            <p className="text-xs text-gray-400">Locked ({LOCK_DURATION_MONTHS} months)</p>
-                                            <p className="text-lg font-bold text-purple-400">{lockedAmount} PINN44</p>
+                                        <div className="p-2 rounded bg-[#8247E5]/10">
+                                            <p className="text-xs text-foreground/40">Locked ({LOCK_DURATION_MONTHS} months)</p>
+                                            <p className="text-lg font-bold text-[#a855f7]">{lockedAmount} PINN44</p>
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-2 mt-3">
@@ -251,7 +252,7 @@ export function AirdropClaim() {
                                             href={getExplorerTxUrl(txHash)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/30 text-sm"
+                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#FFD700]/10 text-[#FFD700] hover:bg-[#FFD700]/20 text-sm"
                                         >
                                             <ExternalLink className="w-3 h-3" />
                                             View Transaction
@@ -260,7 +261,7 @@ export function AirdropClaim() {
                                             onClick={addTokenToMetaMask}
                                             disabled={isAddingToken || tokenAdded}
                                             size="sm"
-                                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                                            className="bg-[#8247E5] hover:bg-[#5b2bba] text-white"
                                         >
                                             {isAddingToken ? (
                                                 <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -303,9 +304,9 @@ export function AirdropClaim() {
                         {/* Wrong Network */}
                         {isConnected && !isCorrectNetwork && (
                             <div className="text-center space-y-4">
-                                <Alert className="bg-yellow-900/20 border-yellow-500/50">
-                                    <AlertTitle className="text-yellow-400">Wrong Network</AlertTitle>
-                                    <AlertDescription className="text-yellow-200">
+                                <Alert className="bg-[#FFD700]/5 border-[#FFD700]/30">
+                                    <AlertTitle className="text-[#FFD700]">Wrong Network</AlertTitle>
+                                    <AlertDescription className="text-foreground/60">
                                         Please switch to Polygon Amoy Testnet to claim your tokens.
                                     </AlertDescription>
                                 </Alert>
@@ -344,25 +345,25 @@ export function AirdropClaim() {
                                 {/* Already Claimed */}
                                 {claimStatus === 'claimed' && !txHash && (
                                     <div className="space-y-4">
-                                        <Alert className="bg-blue-900/20 border-blue-500/50">
-                                            <CheckCircle2 className="h-4 w-4 text-blue-400" />
-                                            <AlertTitle className="text-blue-400">Already Claimed</AlertTitle>
-                                            <AlertDescription className="text-blue-200">
+                                        <Alert className="bg-[#8247E5]/10 border-[#8247E5]/30">
+                                            <CheckCircle2 className="h-4 w-4 text-[#8247E5]" />
+                                            <AlertTitle className="text-[#8247E5]">Already Claimed</AlertTitle>
+                                            <AlertDescription className="text-foreground/60">
                                                 You have already claimed your airdrop tokens.
                                             </AlertDescription>
                                         </Alert>
 
                                         {/* Locked Token Status */}
-                                        <div className="p-4 rounded-lg bg-purple-900/20 border border-purple-500/30">
+                                        <div className="p-4 rounded-lg bg-[#8247E5]/10 border border-[#8247E5]/20">
                                             <div className="flex items-center gap-2 mb-3">
-                                                <Lock className="w-5 h-5 text-purple-400" />
-                                                <span className="font-semibold text-purple-400">Your Locked Tokens</span>
+                                                <Lock className="w-5 h-5 text-[#8247E5]" />
+                                                <span className="font-semibold text-[#8247E5]">Your Locked Tokens</span>
                                             </div>
-                                            <div className="mt-4 p-3 rounded bg-gray-800/50 border border-gray-700">
-                                                <p className="text-sm text-gray-300">
+                                            <div className="mt-4 p-3 rounded bg-[#1a1a2e] border border-[#2a2a3e]">
+                                                <p className="text-sm text-foreground/60">
                                                     <strong>Unlock Conditions:</strong>
                                                 </p>
-                                                <ul className="text-xs text-gray-400 mt-1 space-y-1">
+                                                <ul className="text-xs text-foreground/40 mt-1 space-y-1">
                                                     <li>✓ Complete your first contribution, OR</li>
                                                     <li>✓ Wait {LOCK_DURATION_MONTHS} months from claim date</li>
                                                 </ul>
@@ -370,10 +371,10 @@ export function AirdropClaim() {
                                         </div>
 
                                         {/* Early Unlock Warning */}
-                                        <Alert className="bg-yellow-900/20 border-yellow-500/50">
-                                            <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                                            <AlertTitle className="text-yellow-400">Early Unlock Penalty</AlertTitle>
-                                            <AlertDescription className="text-yellow-200 text-sm">
+                                        <Alert className="bg-[#FFD700]/5 border-[#FFD700]/20">
+                                            <AlertTriangle className="h-4 w-4 text-[#FFD700]" />
+                                            <AlertTitle className="text-[#FFD700]">Early Unlock Penalty</AlertTitle>
+                                            <AlertDescription className="text-foreground/50 text-sm">
                                                 Unlocking before conditions are met incurs a <strong>5% penalty</strong>.
                                             </AlertDescription>
                                         </Alert>
@@ -382,7 +383,7 @@ export function AirdropClaim() {
                                         <Button
                                             onClick={addTokenToMetaMask}
                                             disabled={isAddingToken || tokenAdded}
-                                            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                                            className="w-full bg-[#8247E5] hover:bg-[#5b2bba] text-white"
                                         >
                                             {isAddingToken ? (
                                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
