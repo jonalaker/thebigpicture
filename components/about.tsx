@@ -47,7 +47,7 @@ export default function About() {
           className="animate-on-scroll opacity-0 text-center mb-6 text-gradient-purple"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          THE AGENT
+          THE AIGENT
         </h2>
 
         <p className="animate-on-scroll opacity-0 text-center text-foreground/60 text-lg max-w-2xl mx-auto mb-16 leading-relaxed">
