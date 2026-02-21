@@ -11,6 +11,7 @@ import {
     WORK_SUBMISSION_ABI,
     CONTRIBUTOR_VAULT_ABI,
     GOVERNANCE_MODULE_ABI,
+    FIXED_PRICE_SWAP_ABI,
 } from '@/lib/contracts';
 
 // Generic hook to create a contract instance
@@ -405,6 +406,79 @@ export function useGovernanceModule() {
         executeProposal: async (proposalId: number) => {
             if (!contract) throw new Error('Contract not available');
             const tx = await contract.executeProposal(proposalId);
+            return tx.wait();
+        },
+    }), [contract, address]);
+}
+
+// Fixed Price Swap Hook
+export function useFixedPriceSwap() {
+    const contract = useContract(CONTRACTS_CONFIG.FIXED_PRICE_SWAP, FIXED_PRICE_SWAP_ABI);
+    const { address } = useWallet();
+
+    return useMemo(() => ({
+        contract,
+
+        // Read functions
+        getSaleStats: async () => {
+            if (!contract) return null;
+            return contract.getSaleStats();
+        },
+
+        getTotalPurchased: async () => {
+            if (!contract || !address) return BigInt(0);
+            return contract.totalPurchased(address);
+        },
+
+        getRemainingLimit: async () => {
+            if (!contract || !address) return BigInt(0);
+            return contract.getRemainingLimit(address);
+        },
+
+        canBuy: async () => {
+            if (!contract || !address) return { allowed: false, reason: 'Not connected' };
+            return contract.canBuy(address);
+        },
+
+        isAdmin: async () => {
+            if (!contract || !address) return false;
+            try {
+                const adminRole = await contract.SALE_ADMIN();
+                return contract.hasRole(adminRole, address);
+            } catch {
+                return false;
+            }
+        },
+
+        // User Write functions
+        buyTokens: async (maticAmount: bigint) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.buyTokens({ value: maticAmount });
+            return tx.wait();
+        },
+
+        // Admin Write functions
+        setPrice: async (newPrice: bigint) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.setPrice(newPrice);
+            return tx.wait();
+        },
+
+        setSaleActive: async (active: boolean) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.setSaleActive(active);
+            return tx.wait();
+        },
+
+        depositTokens: async (amount: bigint) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.depositTokens(amount);
+            return tx.wait();
+        },
+
+        withdrawFunds: async (to: string, amount: bigint) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.withdrawFunds(to, amount);
             return tx.wait();
         },
     }), [contract, address]);

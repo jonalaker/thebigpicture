@@ -55,9 +55,6 @@ async function main() {
     const staking = await deployContract("StakingVesting", [TRUSTED_FORWARDER, tokenAddress, deployerAddr]);
     const stakingAddress = await staking.getAddress();
 
-    const merkle = await deployContract("MerkleDistributor", [TRUSTED_FORWARDER, tokenAddress, deployerAddr]);
-    const merkleAddress = await merkle.getAddress();
-
     const governance = await deployContract("GovernanceModule", [TRUSTED_FORWARDER, deployerAddr, DAO]);
     const governanceAddress = await governance.getAddress();
 
@@ -73,14 +70,18 @@ async function main() {
     const gasless = await deployContract("GaslessModule", [TRUSTED_FORWARDER, deployerAddr]);
     const gaslessAddress = await gasless.getAddress();
 
+    // USDC Address (Amoy)
+    const USDC_ADDRESS = isValidAddress(process.env.USDC_ADDRESS)
+        ? process.env.USDC_ADDRESS!
+        : "0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582"; // Amoy USDC
+
+    // 100 PINN44 per 1 USDC (price in tokens per Unit, scaled by 1e18)
+    const SWAP_PRICE = ethers.parseEther("100");
+    const fixedSwap = await deployContract("FixedPriceSwap", [tokenAddress, USDC_ADDRESS, deployerAddr, SWAP_PRICE]);
+    const fixedSwapAddress = await fixedSwap.getAddress();
+
     // Configure cross-contract references
     console.log("\n--- Configuring Contracts ---");
-
-    // Set lock module in MerkleDistributor
-    console.log("Setting StakingVesting as lock module for MerkleDistributor...");
-    const setLockTx = await (merkle as any).setLockModule(stakingAddress);
-    await setLockTx.wait();
-    console.log("Done.");
 
     // Exclude vault and staking from token limits
     console.log("Excluding contracts from anti-bot limits...");
@@ -88,50 +89,62 @@ async function main() {
     await tx.wait();
     tx = await (token as any).excludeFromLimits(stakingAddress, true);
     await tx.wait();
-    tx = await (token as any).excludeFromLimits(merkleAddress, true);
-    await tx.wait();
     tx = await (token as any).excludeFromLimits(buybackAddress, true);
     await tx.wait();
     tx = await (token as any).excludeFromLimits(liquidityAddress, true);
     await tx.wait();
+    tx = await (token as any).excludeFromLimits(fixedSwapAddress, true);
+    await tx.wait();
     console.log("Done.");
 
-    // Token allocation according to specification
-    console.log("\n--- Token Allocation ---");
+    // Token allocation — 1,000,000 PINN44 total
+    console.log("\n--- Token Allocation (1M PINN44) ---");
 
-    // Contributor Pool: 40% (4M)
-    const CONTRIBUTOR_POOL = ethers.parseEther("4000000");
-    console.log("Transferring 4M tokens to ContributorVault (40%)...");
+    // Contributor Pool: 40% (400K)
+    const CONTRIBUTOR_POOL = ethers.parseEther("400000");
+    console.log("Transferring 400K tokens to ContributorVault (40%)...");
     tx = await (token as any).transfer(vaultAddress, CONTRIBUTOR_POOL);
     await tx.wait();
     console.log("Done.");
 
-    // DAO Treasury: 20% (2M) - to staking for vesting
-    const DAO_TREASURY = ethers.parseEther("2000000");
-    console.log("Approving 2M tokens for DAO Treasury vesting (20%)...");
+    // DAO Treasury: 20% (200K) - to staking for vesting
+    const DAO_TREASURY = ethers.parseEther("200000");
+    console.log("Approving 200K tokens for DAO Treasury vesting (20%)...");
     tx = await (token as any).approve(stakingAddress, DAO_TREASURY);
     await tx.wait();
     console.log("Done.");
 
-    // Team/Admin: 15% (1.5M) - to staking for vesting
-    const TEAM_ALLOCATION = ethers.parseEther("1500000");
-    console.log("Approving 1.5M tokens for Team vesting (15%)...");
+    // Team/Admin: 15% (150K) - to staking for vesting
+    const TEAM_ALLOCATION = ethers.parseEther("150000");
+    console.log("Approving 150K tokens for Team vesting (15%)...");
     tx = await (token as any).approve(stakingAddress, TEAM_ALLOCATION);
     await tx.wait();
     console.log("Done.");
 
-    // DEX Liquidity: 15% (1.5M) - to liquidity manager
-    const LIQUIDITY_POOL = ethers.parseEther("1500000");
-    console.log("Transferring 1.5M tokens to LiquidityManager (15%)...");
+    // DEX Liquidity: 15% (150K) - to liquidity manager
+    const LIQUIDITY_POOL = ethers.parseEther("150000");
+    console.log("Transferring 150K tokens to LiquidityManager (15%)...");
     tx = await (token as any).transfer(liquidityAddress, LIQUIDITY_POOL);
     await tx.wait();
     console.log("Done.");
 
-    // Community Airdrop: 10% (1M) - to merkle distributor
-    const AIRDROP_POOL = ethers.parseEther("1000000");
-    console.log("Approving 1M tokens for Airdrop pool (10%)...");
-    tx = await (token as any).approve(merkleAddress, AIRDROP_POOL);
+    // Community Airdrop / Private Sale: 10% (100K) - to FixedPriceSwap
+    const SALE_ALLOCATION = ethers.parseEther("100000");
+    console.log("Transferring 100K tokens to FixedPriceSwap (10%)...");
+    tx = await (token as any).transfer(fixedSwapAddress, SALE_ALLOCATION);
     await tx.wait();
+
+    // Admin calls depositTokens to register the balance in the Sales contract
+    // (Ensure deployer is admin)
+    console.log("Calling depositTokens on Swap contract...");
+    // We need to approve first? No, we just transferred. 
+    // But verify: FixedPriceSwap has `depositTokens` which does `safeTransferFrom`.
+    // If we manually transfer, we just need to know the contract has them.
+    // The contract uses `balanceOf(this)` in `buyTokens`'s `available` check.
+    // So direct transfer works?
+    // Let's check `FixedPriceSwap.sol`. 
+    // `buyTokens`: `uint256 available = pinn44Token.balanceOf(address(this));`
+    // Yes, direct transfer works for availability.
     console.log("Done.");
 
     // Save deployment addresses
@@ -144,12 +157,12 @@ async function main() {
             PINN44Token: tokenAddress,
             ContributorVault: vaultAddress,
             StakingVesting: stakingAddress,
-            MerkleDistributor: merkleAddress,
             GovernanceModule: governanceAddress,
             BuyBackBurn: buybackAddress,
             LiquidityManager: liquidityAddress,
             WorkSubmission: workAddress,
             GaslessModule: gaslessAddress,
+            FixedPriceSwap: fixedSwapAddress,
         },
         config: {
             trustedForwarder: TRUSTED_FORWARDER,
@@ -171,12 +184,12 @@ async function main() {
     console.log("\nToken:", tokenAddress);
     console.log("ContributorVault:", vaultAddress);
     console.log("StakingVesting:", stakingAddress);
-    console.log("MerkleDistributor:", merkleAddress);
     console.log("GovernanceModule:", governanceAddress);
     console.log("BuyBackBurn:", buybackAddress);
     console.log("LiquidityManager:", liquidityAddress);
     console.log("WorkSubmission:", workAddress);
     console.log("GaslessModule:", gaslessAddress);
+    console.log("FixedPriceSwap:", fixedSwapAddress);
 }
 
 main()

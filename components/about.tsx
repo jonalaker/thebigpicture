@@ -47,7 +47,7 @@ export default function About() {
           className="animate-on-scroll opacity-0 text-center mb-6 text-gradient-purple"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          THE AIGENT
+          THE AGENT
         </h2>
 
         <p className="animate-on-scroll opacity-0 text-center text-foreground/60 text-lg max-w-2xl mx-auto mb-16 leading-relaxed">
@@ -88,7 +88,7 @@ export default function About() {
                 Exclusive Opportunity
               </p>
               <p className="text-foreground/70 leading-relaxed mb-8">
-                Get early access to THE AiGENT before its official release. As a valued reviewer,
+                Get early access to THE AIGENT before its official release. As a valued reviewer,
                 your feedback will help shape the final version of this groundbreaking novella.
               </p>
             </div>

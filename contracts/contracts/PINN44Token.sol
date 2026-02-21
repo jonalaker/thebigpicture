@@ -22,8 +22,9 @@ contract PINN44Token is
     AccessControl
 {
     // ============ Constants ============
-    uint256 public constant TOTAL_SUPPLY = 10_000_000 * 10**18; // 10 million tokens
+    uint256 public constant TOTAL_SUPPLY = 1_000_000 * 10**18; // 1 million tokens
     uint256 public constant INITIAL_MAX_TX = TOTAL_SUPPLY * 5 / 1000; // 0.5% of supply
+    uint256 public constant INITIAL_MAX_WALLET = TOTAL_SUPPLY * 2 / 100; // 2% of supply
     uint256 public constant INITIAL_COOLDOWN = 3; // 3 blocks
     
     // ============ Roles ============
@@ -33,6 +34,7 @@ contract PINN44Token is
     // ============ Anti-Bot State ============
     bool public antiBotEnabled;
     uint256 public maxTxAmount;
+    uint256 public maxWalletAmount;
     uint256 public cooldownBlocks;
     mapping(address => bool) public isExcludedFromLimits;
     mapping(address => uint256) public lastTxBlock;
@@ -41,6 +43,7 @@ contract PINN44Token is
     event TokenInitialized(uint256 supply, address owner, address forwarder);
     event AntiBotStatusChanged(bool active);
     event MaxTxUpdated(uint256 newLimit);
+    event MaxWalletUpdated(uint256 newLimit);
     event TokensBurned(uint256 amount, address caller);
     event CooldownUpdated(uint256 newCooldown);
     event ExcludedFromLimits(address account, bool excluded);
@@ -72,6 +75,7 @@ contract PINN44Token is
         // Initialize anti-bot with defaults
         antiBotEnabled = true;
         maxTxAmount = INITIAL_MAX_TX;
+        maxWalletAmount = INITIAL_MAX_WALLET;
         cooldownBlocks = INITIAL_COOLDOWN;
         
         // Exclude owner, treasury, and this contract from limits
@@ -106,6 +110,17 @@ contract PINN44Token is
         require(amount <= TOTAL_SUPPLY, "Max tx too high");
         maxTxAmount = amount;
         emit MaxTxUpdated(amount);
+    }
+    
+    /**
+     * @notice Update maximum wallet holding amount
+     * @param amount New max wallet amount (in wei)
+     */
+    function setMaxWalletAmount(uint256 amount) external onlyRole(ANTI_BOT_ADMIN) {
+        require(amount >= TOTAL_SUPPLY / 100, "Max wallet too low"); // Min 1%
+        require(amount <= TOTAL_SUPPLY, "Max wallet too high");
+        maxWalletAmount = amount;
+        emit MaxWalletUpdated(amount);
     }
     
     /**
@@ -160,6 +175,14 @@ contract PINN44Token is
         // Check max transaction amount
         if (!isExcludedFromLimits[from] && !isExcludedFromLimits[to]) {
             require(amount <= maxTxAmount, "Exceeds max tx");
+        }
+        
+        // Check max wallet holding for receiver
+        if (!isExcludedFromLimits[to] && maxWalletAmount > 0) {
+            require(
+                balanceOf(to) + amount <= maxWalletAmount,
+                "Exceeds max wallet"
+            );
         }
         
         // Check cooldown for sender
@@ -239,6 +262,19 @@ contract PINN44Token is
         }
         
         return (true, "");
+    }
+    
+    /**
+     * @notice Check if receiving a transfer would exceed max wallet
+     * @param to Receiver address
+     * @param amount Transfer amount
+     * @return withinLimit True if balance + amount is within limit
+     */
+    function checkMaxWallet(address to, uint256 amount) external view returns (bool withinLimit) {
+        if (!antiBotEnabled || isExcludedFromLimits[to] || maxWalletAmount == 0) {
+            return true;
+        }
+        return balanceOf(to) + amount <= maxWalletAmount;
     }
     
     // ============ Required Overrides ============

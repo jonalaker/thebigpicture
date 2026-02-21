@@ -265,7 +265,8 @@ contract BuyBackBurn is AccessControl, ReentrancyGuard {
         uint256 amount
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (token == address(0)) {
-            payable(to).transfer(amount);
+            (bool success, ) = payable(to).call{value: amount}("");
+            require(success, "Native transfer failed");
         } else {
             IERC20(token).safeTransfer(to, amount);
         }

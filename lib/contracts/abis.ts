@@ -11,6 +11,7 @@ export const PINN44_TOKEN_ABI = [
     'function allowance(address owner, address spender) view returns (uint256)',
     'function antiBotEnabled() view returns (bool)',
     'function maxTxAmount() view returns (uint256)',
+    'function maxWalletAmount() view returns (uint256)',
 
     // Write functions
     'function transfer(address to, uint256 amount) returns (bool)',
@@ -21,21 +22,6 @@ export const PINN44_TOKEN_ABI = [
     // Events
     'event Transfer(address indexed from, address indexed to, uint256 value)',
     'event Approval(address indexed owner, address indexed spender, uint256 value)',
-];
-
-export const MERKLE_DISTRIBUTOR_ABI = [
-    // Read functions
-    'function token() view returns (address)',
-    'function currentEpoch() view returns (uint256)',
-    'function isClaimed(uint256 epochId, uint256 index) view returns (bool)',
-    'function getRemainingAmount(uint256 epochId) view returns (uint256)',
-    'function verifyClaim(uint256 epochId, uint256 index, address account, uint256 amount, bytes32[] proof) view returns (bool valid, string reason)',
-
-    // Write functions
-    'function claim(uint256 epochId, uint256 index, address account, uint256 amount, bytes32[] proof)',
-
-    // Events
-    'event AirdropClaimed(address indexed account, uint256 amount, uint256 indexed epoch)',
 ];
 
 export const STAKING_VESTING_ABI = [
@@ -147,4 +133,43 @@ export const GOVERNANCE_MODULE_ABI = [
     'event VoteCast(uint256 indexed proposalId, address indexed voter, bool support, uint256 weight)',
     'event ProposalExecuted(uint256 indexed proposalId)',
     'event ContributionRecorded(address indexed contributor, uint256 points)',
+];
+
+export const FIXED_PRICE_SWAP_ABI = [
+    // Read functions
+    'function pinn44Token() view returns (address)',
+    'function paymentToken() view returns (address)',
+    'function pricePerUnit() view returns (uint256)',
+    'function saleActive() view returns (bool)',
+    'function whitelistEnabled() view returns (bool)',
+    'function availableForSale() view returns (uint256)',
+    'function getTokensForPayment(uint256 paymentAmount) view returns (uint256)',
+    'function getPaymentForTokens(uint256 tokenAmount) view returns (uint256)',
+    'function getRemainingLimit(address buyer) view returns (uint256)',
+    'function canBuy(address buyer) view returns (bool allowed, string reason)',
+    'function getSaleStats() view returns (uint256 totalTokensSold, uint256 totalFundsRaised, uint256 availableTokens, uint256 currentPrice, bool isActive)',
+    'function totalPurchased(address buyer) view returns (uint256)',
+    'function maxPerWallet() view returns (uint256)',
+    'function maxPerTx() view returns (uint256)',
+    'function cooldownSeconds() view returns (uint256)',
+    'function lastPurchaseTime(address) view returns (uint256)',
+    'function whitelisted(address) view returns (bool)',
+
+    // Write functions
+    'function buyTokens(uint256 amount) returns (bool)',
+    'function setPrice(uint256 newPrice)',
+    'function setSaleActive(bool active)',
+    'function setWhitelistEnabled(bool enabled)',
+    'function setWhitelisted(address[] accounts, bool status)',
+    'function setLimits(uint256 maxPerWallet, uint256 maxPerTx, uint256 cooldown)',
+    'function depositTokens(uint256 amount)',
+    'function withdrawFunds(address to, uint256 amount)',
+    'function withdrawTokens(address to, uint256 amount)',
+
+    // Events
+    'event TokensPurchased(address indexed buyer, uint256 cost, uint256 tokensBought)',
+    'event PriceUpdated(uint256 oldPrice, uint256 newPrice)',
+    'event SaleStatusChanged(bool active)',
+    'event TokensDeposited(uint256 amount)',
+    'event FundsWithdrawn(address indexed to, uint256 amount)',
 ];

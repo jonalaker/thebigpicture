@@ -10,7 +10,6 @@ export const CONTRACTS_CONFIG = {
 
     // Contract addresses (set after deployment)
     PINN44_TOKEN: process.env.NEXT_PUBLIC_PINN44_TOKEN_ADDRESS || '',
-    MERKLE_DISTRIBUTOR: process.env.NEXT_PUBLIC_MERKLE_DISTRIBUTOR_ADDRESS || '',
     STAKING_VESTING: process.env.NEXT_PUBLIC_STAKING_VESTING_ADDRESS || '',
     WORK_SUBMISSION: process.env.NEXT_PUBLIC_WORK_SUBMISSION_ADDRESS || '',
     CONTRIBUTOR_VAULT: process.env.NEXT_PUBLIC_CONTRIBUTOR_VAULT_ADDRESS || '',
@@ -18,6 +17,7 @@ export const CONTRACTS_CONFIG = {
     BUYBACK_BURN: process.env.NEXT_PUBLIC_BUYBACK_BURN_ADDRESS || '',
     LIQUIDITY_MANAGER: process.env.NEXT_PUBLIC_LIQUIDITY_MANAGER_ADDRESS || '',
     GASLESS_MODULE: process.env.NEXT_PUBLIC_GASLESS_MODULE_ADDRESS || '',
+    FIXED_PRICE_SWAP: process.env.NEXT_PUBLIC_FIXED_PRICE_SWAP_ADDRESS || '',
 };
 
 // Chain configuration for wallet (Polygon Amoy Testnet)

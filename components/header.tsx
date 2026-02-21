@@ -18,6 +18,7 @@ export default function Header() {
     { label: "Home", href: "/" },
     { label: "About", href: "/#about" },
     { label: "Author", href: "/#author" },
+    { label: "Buy PINN44", href: "/swap" },
     { label: "Airdrop", href: "/airdrop" },
     { label: "Staking", href: "/staking" },
     { label: "Submit Work", href: "/bounties" },

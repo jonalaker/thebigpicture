@@ -10,14 +10,14 @@ describe("PINN44Token", function () {
     let user1: SignerWithAddress;
     let user2: SignerWithAddress;
 
-    const TOTAL_SUPPLY = ethers.parseEther("10000000"); // 10M tokens
+    const TOTAL_SUPPLY = ethers.parseEther("1000000"); // 1M tokens (matches contract)
     const ZERO_ADDRESS = ethers.ZeroAddress;
 
     beforeEach(async function () {
         [owner, treasury, user1, user2] = await ethers.getSigners();
 
         const PINN44Token = await ethers.getContractFactory("PINN44Token");
-        token = await PINN44Token.deploy(owner.address, owner.address, treasury.address);
+        token = await PINN44Token.deploy(ethers.ZeroAddress, owner.address, treasury.address);
         await token.waitForDeployment();
     });
 
@@ -42,6 +42,11 @@ describe("PINN44Token", function () {
             expect(await token.hasRole(DEFAULT_ADMIN, owner.address)).to.be.true;
             expect(await token.hasRole(TREASURY_ROLE, treasury.address)).to.be.true;
         });
+
+        it("Should initialize max wallet amount to 2% of supply", async function () {
+            const maxWallet = await token.maxWalletAmount();
+            expect(maxWallet).to.equal(TOTAL_SUPPLY * 2n / 100n); // 20,000 tokens
+        });
     });
 
     describe("Anti-Bot Protection", function () {
@@ -53,7 +58,7 @@ describe("PINN44Token", function () {
             const maxTx = await token.maxTxAmount();
             const exceedAmount = maxTx + 1n;
 
-            // Transfer to user1 first
+            // Transfer to user1 first (owner is excluded)
             await token.transfer(user1.address, exceedAmount);
 
             // User1 should not be able to send more than max
@@ -79,19 +84,78 @@ describe("PINN44Token", function () {
 
         it("Should allow excluding addresses from limits", async function () {
             await token.excludeFromLimits(user1.address, true);
+            await token.excludeFromLimits(user2.address, true);
             expect(await token.isExcludedFromLimits(user1.address)).to.be.true;
 
-            // Transfer a large amount
+            // Transfer a large amount (both excluded so max wallet doesn't apply)
             const largeAmount = TOTAL_SUPPLY / 2n;
             await token.transfer(user1.address, largeAmount);
 
-            // User1 can transfer any amount
+            // User1 can transfer any amount to excluded user2
             await token.connect(user1).transfer(user2.address, largeAmount);
         });
 
         it("Should allow disabling anti-bot", async function () {
             await token.setAntiBotEnabled(false);
             expect(await token.antiBotEnabled()).to.be.false;
+        });
+    });
+
+    describe("Max Wallet Limit", function () {
+        it("Should enforce max wallet holding", async function () {
+            const maxWallet = await token.maxWalletAmount();
+
+            // Transfer exactly max wallet amount (should work)
+            await token.transfer(user1.address, maxWallet);
+            expect(await token.balanceOf(user1.address)).to.equal(maxWallet);
+
+            // Advance past cooldown
+            await ethers.provider.send("evm_mine", []);
+            await ethers.provider.send("evm_mine", []);
+            await ethers.provider.send("evm_mine", []);
+
+            // Transfer 1 more token should fail (exceeds max wallet)
+            await expect(
+                token.transfer(user1.address, 1n)
+            ).to.be.revertedWith("Exceeds max wallet");
+        });
+
+        it("Should allow excluded wallets to exceed max wallet", async function () {
+            await token.excludeFromLimits(user1.address, true);
+            const overLimit = TOTAL_SUPPLY / 2n;
+
+            // Excluded wallet can receive any amount
+            await token.transfer(user1.address, overLimit);
+            expect(await token.balanceOf(user1.address)).to.equal(overLimit);
+        });
+
+        it("Should allow admin to update max wallet", async function () {
+            const newMaxWallet = ethers.parseEther("50000"); // 5% of supply
+            await token.setMaxWalletAmount(newMaxWallet);
+            expect(await token.maxWalletAmount()).to.equal(newMaxWallet);
+        });
+
+        it("Should reject max wallet below 1% of supply", async function () {
+            const tooLow = TOTAL_SUPPLY / 200n; // 0.5%
+            await expect(
+                token.setMaxWalletAmount(tooLow)
+            ).to.be.revertedWith("Max wallet too low");
+        });
+
+        it("Should not enforce max wallet when anti-bot is disabled", async function () {
+            await token.setAntiBotEnabled(false);
+            const overLimit = TOTAL_SUPPLY / 2n;
+
+            // Can receive over limit when anti-bot is off
+            await token.transfer(user1.address, overLimit);
+            expect(await token.balanceOf(user1.address)).to.equal(overLimit);
+        });
+
+        it("Should check max wallet correctly via checkMaxWallet", async function () {
+            const maxWallet = await token.maxWalletAmount();
+
+            expect(await token.checkMaxWallet(user1.address, maxWallet)).to.be.true;
+            expect(await token.checkMaxWallet(user1.address, maxWallet + 1n)).to.be.false;
         });
     });
 
@@ -141,6 +205,12 @@ describe("PINN44Token", function () {
             const newMax = ethers.parseEther("100000");
             await token.setMaxTxAmount(newMax);
             expect(await token.maxTxAmount()).to.equal(newMax);
+        });
+
+        it("Should prevent non-admin from updating max wallet", async function () {
+            await expect(
+                token.connect(user1).setMaxWalletAmount(ethers.parseEther("50000"))
+            ).to.be.revertedWithCustomError(token, "AccessControlUnauthorizedAccount");
         });
     });
 });

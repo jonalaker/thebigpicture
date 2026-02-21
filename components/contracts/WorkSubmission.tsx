@@ -397,6 +397,21 @@ export function WorkSubmissionComponent() {
                 stakeValue
             );
 
+            // Log to off-chain Google Sheets ledger
+            try {
+                await fetch('/api/track-work', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: address,
+                        taskId: `Bounty #${selectedBounty.id} - ${selectedBounty.title}`,
+                        tokensEarned: ethers.formatEther(selectedBounty.rewardAmount)
+                    })
+                });
+            } catch (err) {
+                console.error('Failed to log to off-chain tracker', err);
+            }
+
             setTxHash(receipt.hash);
             setSuccessMessage('Work submitted successfully!');
             setFileUri('');
