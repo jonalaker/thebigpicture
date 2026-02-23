@@ -105,10 +105,6 @@ export default function Hero() {
             Step 1: <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">Click here to add your MetaMask wallet</a> to accept payments and coordinate your contributions.
           </p>
 
-          <p className="text-base md:text-lg text-[#8247E5] font-semibold bg-[#8247E5]/10 p-3 rounded-md border border-[#8247E5]/20">
-            📖 The novella is available for download (it's the first submission file in the list below). <br />
-            <span className="text-sm mt-2 inline-block text-foreground/70 font-medium">Next upcoming tasks: characters, storyboard, etc.</span>
-          </p>
 
           <div className="space-y-5 text-base md:text-lg text-foreground/80 leading-relaxed px-2">
             <p>
