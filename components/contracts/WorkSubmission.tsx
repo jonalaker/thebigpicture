@@ -150,10 +150,26 @@ export function WorkSubmissionComponent() {
             }
 
             const bountyData = await Promise.all(bountyPromises);
-            const formattedBounties = bountyData
-                .filter(b => b !== null)
-                .map((b, index) => ({
-                    id: index + 1,
+
+            // Dynamically count active submissions (excluding rejected ones with status === 2)
+            const formattedPromises = bountyData.map(async (b, index) => {
+                if (!b) return null;
+                const bountyId = index + 1;
+                let activeCount = Number(b.submissionCount); // default fallback
+
+                try {
+                    const submissionIds = await workSubmission.getBountySubmissions(bountyId);
+                    const subPromises = submissionIds.map((id: bigint) =>
+                        workSubmission.getSubmission(Number(id))
+                    );
+                    const subData = await Promise.all(subPromises);
+                    activeCount = subData.filter(s => s && Number(s.status) !== 2).length;
+                } catch (e) {
+                    console.error('Failed to parse dynamic submission logic:', e);
+                }
+
+                return {
+                    id: bountyId,
                     title: b.title,
                     description: b.description,
                     rewardToken: b.rewardToken,
@@ -162,10 +178,14 @@ export function WorkSubmissionComponent() {
                     state: Number(b.state),
                     stakeRequired: b.stakeRequired,
                     stakeToken: b.stakeToken,
-                    submissionCount: Number(b.submissionCount),
+                    submissionCount: activeCount, // dynamic count
                     funded: b.funded,
                     creator: b.creator,
-                }));
+                };
+            });
+
+            const resolvedBounties = await Promise.all(formattedPromises);
+            const formattedBounties = resolvedBounties.filter(b => b !== null);
 
             setBounties(formattedBounties);
         } catch (err) {

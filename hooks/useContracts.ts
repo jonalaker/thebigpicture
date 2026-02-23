@@ -6,7 +6,6 @@ import { useWallet } from './useWallet';
 import { CONTRACTS_CONFIG } from '@/lib/contracts';
 import {
     PINN44_TOKEN_ABI,
-    MERKLE_DISTRIBUTOR_ABI,
     STAKING_VESTING_ABI,
     WORK_SUBMISSION_ABI,
     CONTRIBUTOR_VAULT_ABI,
@@ -73,42 +72,7 @@ export function usePINN44Token() {
     }), [contract, address]);
 }
 
-// Merkle Distributor Hook (New Airdrop System)
-export function useMerkleDistributor() {
-    const contract = useContract(CONTRACTS_CONFIG.MERKLE_DISTRIBUTOR, MERKLE_DISTRIBUTOR_ABI);
-
-    return useMemo(() => ({
-        contract,
-
-        // Read functions
-        getCurrentEpoch: async () => {
-            if (!contract) return 0;
-            return contract.currentEpoch();
-        },
-
-        isClaimed: async (epochId: number, index: number) => {
-            if (!contract) return false;
-            return contract.isClaimed(epochId, index);
-        },
-
-        getRemainingAmount: async (epochId: number) => {
-            if (!contract) return BigInt(0);
-            return contract.getRemainingAmount(epochId);
-        },
-
-        verifyClaim: async (epochId: number, index: number, account: string, amount: bigint, proof: string[]) => {
-            if (!contract) return { valid: false, reason: 'Contract not available' };
-            return contract.verifyClaim(epochId, index, account, amount, proof);
-        },
-
-        // Write functions
-        claim: async (epochId: number, index: number, account: string, amount: bigint, proof: string[]) => {
-            if (!contract) throw new Error('Contract not available');
-            const tx = await contract.claim(epochId, index, account, amount, proof);
-            return tx.wait();
-        },
-    }), [contract]);
-}
+// MerkleDistributor hook removed — contract not currently deployed
 
 // Staking & Vesting Hook
 export function useStakingVesting() {

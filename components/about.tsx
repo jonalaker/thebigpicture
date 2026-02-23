@@ -44,14 +44,16 @@ export default function About() {
 
         {/* Section Heading */}
         <h2
-          className="animate-on-scroll opacity-0 text-center mb-6 text-gradient-purple"
+          className="animate-on-scroll opacity-0 text-center mb-6"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          THE AGENT
+          <span className="text-gradient-purple">THE </span>
+          <span className="text-[#FFD700]">Ai</span>
+          <span className="text-gradient-purple">GENT</span>
         </h2>
 
         <p className="animate-on-scroll opacity-0 text-center text-foreground/60 text-lg max-w-2xl mx-auto mb-16 leading-relaxed">
-          Discover a thought-provoking novella that challenges our understanding of human evolution,
+          Discover a thought-provoking story that challenges our understanding of human evolution,
           consciousness, and choice in the digital age. Set in Sydney 2044.
         </p>
 
@@ -88,8 +90,8 @@ export default function About() {
                 Exclusive Opportunity
               </p>
               <p className="text-foreground/70 leading-relaxed mb-8">
-                Get early access to THE AIGENT before its official release. As a valued reviewer,
-                your feedback will help shape the final version of this groundbreaking novella.
+                Get early access to THE <span className="text-[#FFD700] font-bold drop-shadow-md">Ai</span>GENT before its official release. As a valued reviewer,
+                your feedback will help shape the final version of this groundbreaking story.
               </p>
             </div>
             <Link href="#contact">

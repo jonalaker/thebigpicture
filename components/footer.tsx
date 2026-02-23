@@ -13,10 +13,10 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <h3
-              className="text-xl font-bold mb-4 text-gradient-purple-gold normal-case"
+              className="whitespace-nowrap text-xl font-bold mb-4 text-gradient-purple-gold normal-case"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              The Big Picture
+              The-Big-Picture.info
             </h3>
             <p className="text-sm text-foreground/40 leading-relaxed">
               A trailblazing film production studio pioneering the future of
@@ -90,7 +90,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-[#2a2a3e] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-foreground/30 uppercase tracking-wider">
-            © {currentYear} The Big Picture. All rights reserved.
+            © {currentYear} The-Big-Picture.info. All rights reserved.
           </p>
           <p className="text-xs text-foreground/20 uppercase tracking-wider">
             <span className="text-[#FFD700]">Blockchain-Powered</span>{" "}

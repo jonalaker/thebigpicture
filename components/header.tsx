@@ -36,9 +36,9 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="group flex items-center gap-3">
-          <span className="text-xl sm:text-2xl font-bold uppercase tracking-widest text-gradient-purple-gold"
+          <span className="whitespace-nowrap text-xl sm:text-2xl font-bold uppercase tracking-widest text-gradient-purple-gold"
             style={{ fontFamily: "var(--font-heading)" }}>
-            The Big Picture
+            The-Big-Picture.info
           </span>
           <span className="hidden md:inline text-[10px] uppercase tracking-[0.3em] text-[#FFD700]/60 font-semibold border border-[#FFD700]/20 px-2 py-0.5 rounded">
             Film Studio

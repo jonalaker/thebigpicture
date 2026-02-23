@@ -93,13 +93,19 @@ export default function ChatWidget() {
       {/* Chat Widget Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center hover:scale-110"
+        className={`fixed bottom-6 right-6 z-50 min-h-[56px] ${isOpen ? "w-14 justify-center" : "px-4 sm:px-6 py-2 justify-between gap-3"
+          } bg-primary text-primary-foreground rounded-full shadow-[0_0_20px_rgba(130,71,229,0.3)] hover:bg-primary/90 transition-all duration-300 flex items-center hover:shadow-[0_0_25px_rgba(130,71,229,0.5)] hover:scale-105 border border-white/10`}
         aria-label="Open chat"
       >
         {isOpen ? (
           <X size={24} />
         ) : (
-          <MessageCircle size={24} />
+          <>
+            <MessageCircle size={24} className="shrink-0 text-[#FFD700]" />
+            <span className="text-[11px] sm:text-xs font-semibold text-left leading-tight max-w-[150px] sm:max-w-[200px] md:max-w-[280px]">
+              Chat with the AI PINN44 who runs the world in 2044 in THE AiGENT
+            </span>
+          </>
         )}
       </button>
 
@@ -109,12 +115,12 @@ export default function ChatWidget() {
           {/* Header */}
           <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <span className="text-lg font-bold">C</span>
+              <div className="w-10 h-10 rounded-full bg-[#FFD700]/20 flex items-center justify-center border border-[#FFD700]/50">
+                <span className="text-lg font-bold text-[#FFD700]">P</span>
               </div>
               <div>
-                <h3 className="font-semibold">Chat</h3>
-                {/* <p className="text-xs opacity-80">AI from 2044</p> */}
+                <h3 className="font-semibold text-white">PINN44</h3>
+                <p className="text-xs text-[#FFD700]/80">AI from 2044</p>
               </div>
             </div>
             <button
@@ -133,11 +139,10 @@ export default function ChatWidget() {
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] px-4 py-2 rounded-2xl ${
-                    message.role === "user"
+                  className={`max-w-[80%] px-4 py-2 rounded-2xl ${message.role === "user"
                       ? "bg-primary text-primary-foreground rounded-br-md"
                       : "bg-background border border-border text-foreground rounded-bl-md"
-                  }`}
+                    }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>

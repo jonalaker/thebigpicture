@@ -97,21 +97,29 @@ export default function Hero() {
           Join the First Blockchain
           <br />
           <span className="text-foreground">Feature Film</span>
+
         </h1>
 
-        {/* Subhead */}
-        <p className="animate-on-scroll opacity-0 text-lg md:text-xl text-foreground/70 max-w-2xl mx-auto mb-8 leading-relaxed">
-          Sign in with MetaMask, submit your work, earn <span className="text-[#FFD700] font-semibold">PINN tokens</span> and
-          cash rewards. Be part of cinema history.
-        </p>
-
-        {/* Earn Box */}
-        <div className="animate-on-scroll opacity-0 glass-panel rounded-xl p-5 max-w-xl mx-auto mb-10 glow-purple">
-          <p className="text-base md:text-lg leading-relaxed text-foreground/80">
-            <span className="text-[#8247E5] font-bold">Earn 2,000+ PINN tokens</span> that may be
-            sellable after ICO launch at 1¢ per PINN:
-            <span className="text-[#FFD700] font-bold ml-1">2,000 PINN = $20 minimum</span>
+        {/* Detailed Instructions block */}
+        <div className="animate-on-scroll opacity-0 glass-panel rounded-xl p-6 md:p-8 max-w-3xl mx-auto mb-12 glow-purple text-left space-y-4 shadow-lg">
+          <p className="text-base md:text-lg text-[#FFD700] font-semibold mb-2">
+            Step 1: <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors">Click here to add your MetaMask wallet</a> to accept payments and coordinate your contributions.
           </p>
+
+          <p className="text-base md:text-lg text-[#8247E5] font-semibold bg-[#8247E5]/10 p-3 rounded-md border border-[#8247E5]/20">
+            📖 The novella is available for download (it's the first submission file in the list below). <br />
+            <span className="text-sm mt-2 inline-block text-foreground/70 font-medium">Next upcoming tasks: characters, storyboard, etc.</span>
+          </p>
+
+          <p className="text-base md:text-lg text-foreground/90 leading-relaxed font-medium">
+            Join the First Blockchain Feature Film. Write the screenplay.
+            Sign in with MetaMask wallet, submit job, including your own guru.com name.
+            Successful job selected, and then contracted on guru.com, and paid from Safepay.
+            Also earn an extra <strong className="text-[#FFD700]">2000 tokens</strong> that may be sell-able after the ICO is launched: at 1 cent per PINN e.g: <span className="text-green-400 font-bold">2000 PINN tokens = $20</span> <span className="text-xs text-foreground/50 italic ml-1">(This is only the minimum PINN value)</span>.
+            You will have access to the files to view the successfully selected proceeding jobs, so that your subsequently submitted jobs can be matched to them.
+          </p>
+
+
         </div>
 
         {/* ═══ Tasks Grid ═══ */}
@@ -127,7 +135,7 @@ export default function Hero() {
             {[
               { task: "Characters & Voices", reward: "$75 + 2,000 PINNs" },
               { task: "Storyboard", reward: "$75 + 2,000 PINNs" },
-              { task: "Video Segments (×20)", reward: "$30 + 810 PINNs each" },
+              { task: "20 segments of video (5 Minutes each)", reward: "$30 + 810 PINNs each" },
               { task: "Music Score", reward: "$75 + 2,000 PINNs" },
               { task: "Final Edit", reward: "$100 + 2,700 PINNs" },
             ].map((item, i) => (
