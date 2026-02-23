@@ -25,9 +25,16 @@ export default function SwapPage() {
                     >
                         Buy PINN44
                     </h1>
-                    <p className="text-center text-foreground/50 mb-12 max-w-lg mx-auto">
-                        Private token sale at a fixed price. Buy PINN44 tokens with MATIC
-                        before our public DEX listing.
+                    <div className="bg-[#FFD700]/10 border border-[#FFD700]/30 rounded-lg p-4 mb-6 text-center max-w-lg mx-auto shadow-lg shadow-[#FFD700]/5">
+                        <p className="text-[#FFD700] font-bold text-lg mb-1 flex justify-center items-center gap-2">
+                            <span>⚠️</span> BETA TESTING PHASE
+                        </p>
+                        <p className="text-foreground/80 text-sm">
+                            The Private Token Sale is currently in a safe testing environment on the Polygon Amoy Testnet. You can buy PINN44 tokens using <strong>free Test USDC</strong>.
+                        </p>
+                    </div>
+                    <p className="text-center text-foreground/50 mb-12 max-w-lg mx-auto text-sm">
+                        Practice buying PINN44 tokens at a fixed price before our official Mainnet launch and public DEX listing.
                     </p>
                     <FixedPriceSwapComponent />
                 </div>

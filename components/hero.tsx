@@ -83,22 +83,21 @@ export default function Hero() {
       {/* ═══ Content ═══ */}
       <div className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8 py-32">
         {/* Tagline */}
-        <div className="animate-on-scroll opacity-0 mb-6">
-          <span className="inline-block px-4 py-1.5 text-xs uppercase tracking-[0.3em] font-semibold text-[#FFD700] border border-[#FFD700]/30 rounded-full bg-[#FFD700]/5">
-            🎬 Trailblazing Film Production Technology
+        <div className="animate-on-scroll opacity-0 mb-8 sm:mb-10">
+          <span className="inline-block px-5 py-2 sm:px-6 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] font-semibold text-[#FFD700] border border-[#FFD700]/30 rounded-full bg-[#FFD700]/10 shadow-[0_0_20px_rgba(255,215,0,0.15)] backdrop-blur-md">
+            🎬 The trailblazing film production studio pioneering the future of collaborative, blockchain-coordinated cinema.
           </span>
         </div>
 
         {/* Main Heading */}
-        <h1
-          className="animate-on-scroll opacity-0 mb-6 leading-[1.1] text-gradient-purple-gold"
+        <h2
+          className="animate-on-scroll opacity-0 mb-10 leading-[1.1] sm:leading-tight text-gradient-purple-gold text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight drop-shadow-xl"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Join the First Blockchain
+          Join the First Blockchain Coordinated Feature Film Production.
           <br />
-          <span className="text-foreground">Feature Film</span>
-
-        </h1>
+          <span className="text-foreground/90 font-medium text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-6 block drop-shadow-md">Write the screenplay. Sign in with</span>
+        </h2>
 
         {/* Detailed Instructions block */}
         <div className="animate-on-scroll opacity-0 glass-panel rounded-xl p-6 md:p-8 max-w-3xl mx-auto mb-12 glow-purple text-left space-y-4 shadow-lg">
@@ -111,13 +110,28 @@ export default function Hero() {
             <span className="text-sm mt-2 inline-block text-foreground/70 font-medium">Next upcoming tasks: characters, storyboard, etc.</span>
           </p>
 
-          <p className="text-base md:text-lg text-foreground/90 leading-relaxed font-medium">
-            Join the First Blockchain Feature Film. Write the screenplay.
-            Sign in with MetaMask wallet, submit job, including your own guru.com name.
-            Successful job selected, and then contracted on guru.com, and paid from Safepay.
-            Also earn an extra <strong className="text-[#FFD700]">2000 tokens</strong> that may be sell-able after the ICO is launched: at 1 cent per PINN e.g: <span className="text-green-400 font-bold">2000 PINN tokens = $20</span> <span className="text-xs text-foreground/50 italic ml-1">(This is only the minimum PINN value)</span>.
-            You will have access to the files to view the successfully selected proceeding jobs, so that your subsequently submitted jobs can be matched to them.
-          </p>
+          <div className="space-y-5 text-base md:text-lg text-foreground/80 leading-relaxed px-2">
+            <p>
+              <span className="text-foreground font-semibold tracking-wide">Join the First Blockchain Feature Film. Write the screenplay.</span> <br className="hidden sm:block" />
+              Sign in with MetaMask wallet, submit job, including your own guru.com name.
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-[#8247E5] mt-1">✦</span>
+              <span>Successful job selected, and then contracted on guru.com, and paid from Safepay.</span>
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-[#FFD700] mt-1">✦</span>
+              <span>
+                Also earn an extra <strong className="text-[#FFD700] drop-shadow-sm font-bold bg-[#FFD700]/10 px-2 py-0.5 rounded">2000 tokens</strong> that may be sell-able after the ICO is launched: at 1 cent per PINN e.g: <span className="text-green-400 font-bold tracking-wide">2000 PINN tokens = $20</span>
+                <span className="text-sm text-foreground/50 italic ml-2 block mt-1">(This is only the minimum PINN value)</span>
+              </span>
+            </p>
+            <div className="mt-6 border-l-2 border-[#8247E5]/40 pl-4 py-2 bg-gradient-to-r from-[#8247E5]/5 to-transparent rounded-r-lg">
+              <p className="text-sm md:text-base text-foreground/70">
+                You will have access to the files to view the successfully selected proceeding jobs, so that your subsequently submitted jobs can be matched to them.
+              </p>
+            </div>
+          </div>
 
 
         </div>
