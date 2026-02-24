@@ -53,8 +53,9 @@ export default function About() {
         </h2>
 
         <p className="animate-on-scroll opacity-0 text-center text-foreground/60 text-lg max-w-2xl mx-auto mb-16 leading-relaxed">
-          Discover a thought-provoking story that challenges our understanding of human evolution,
-          consciousness, and choice in the digital age. Set in Sydney 2044.
+          Discover a thought-provoking story that challenges our understanding of human evolution, consciousness,
+          and choice in the digital age. Set in Sydney 2044, THE <span className="text-[#8247E5] font-bold">Ai</span>GENT explores what happens when artificial
+          intelligence and human potential collide.
         </p>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
@@ -70,8 +71,8 @@ export default function About() {
               About the Story
             </h3>
             <p className="text-foreground/70 leading-relaxed mb-4">
-              In a near-future Sydney, a revolutionary technology emerges that allows humanity to
-              shape their own evolution. But every choice comes with consequences.
+              In a near-future Sydney, a revolutionary technology emerges that allows humanity to shape their own
+              evolution. But every choice comes with consequences.
             </p>
             <p className="text-foreground/60 leading-relaxed">
               As a family navigates this new reality against the backdrop of a concert and a
@@ -90,8 +91,8 @@ export default function About() {
                 Exclusive Opportunity
               </p>
               <p className="text-foreground/70 leading-relaxed mb-8">
-                Get early access to THE <span className="text-[#FFD700] font-bold drop-shadow-md">Ai</span>GENT before its official release. As a valued reviewer,
-                your feedback will help shape the final version of this groundbreaking story.
+                Get early access to THE <span className="text-[#FFD700] font-bold drop-shadow-md">Ai</span>GENT before its official release. As a valued reviewer, your feedback will
+                help shape the final version of this groundbreaking novella.
               </p>
             </div>
             <Link href="#contact">
