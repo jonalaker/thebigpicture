@@ -186,7 +186,7 @@ export default function Hero() {
             size="lg"
             className="btn-purple px-10 py-4 text-base rounded-lg shadow-lg cursor-pointer"
           >
-            Start Contributing
+            Check Progress/Submit Work
           </Button>
         </div>
 
