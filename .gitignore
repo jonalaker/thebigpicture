@@ -60,6 +60,7 @@ contracts/deployment.json
 
 # Airdrop data (potentially sensitive)
 data/airdrop-claims.json
+data/visitors.json
 
 # Testing
 coverage/
