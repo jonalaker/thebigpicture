@@ -32,7 +32,7 @@ export default function BountiesPage() {
 
                     <div className="mb-10 p-4 sm:p-5 rounded-xl border border-[#8247E5]/30 bg-[#8247E5]/10 shadow-[0_0_20px_rgba(130,71,229,0.15)] backdrop-blur-sm max-w-3xl mx-auto text-center">
                         <p className="text-base md:text-lg text-[#FFD700] font-semibold">
-                            📖 The novella is available for download (it's the first submission file in the list below).
+                            📖 The novella is available for download <br></br>(it's the first submission file in the list below).
                         </p>
                         <p className="text-sm mt-2 text-foreground/80 font-medium">
                             Next upcoming tasks: characters, storyboard, etc.

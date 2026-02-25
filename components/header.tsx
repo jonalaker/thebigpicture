@@ -41,7 +41,7 @@ export default function Header() {
             The-Big-Picture.info
           </span>
           <span className="hidden md:inline text-[10px] uppercase tracking-[0.3em] text-[#FFD700]/60 font-semibold border border-[#FFD700]/20 px-2 py-0.5 rounded">
-            Film Studio
+            Film Studios
           </span>
         </Link>
 
