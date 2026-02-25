@@ -34,6 +34,7 @@ import { useWallet } from '@/hooks/useWallet';
 import { useWorkSubmission, usePINN44Token } from '@/hooks/useContracts';
 import { CONTRACTS_CONFIG, getExplorerTxUrl } from '@/lib/contracts';
 import { ConnectWalletBanner } from '@/components/ConnectWallet';
+import { SecureFileViewer } from '@/components/SecureFileViewer';
 
 interface Bounty {
     id: number;
@@ -86,6 +87,10 @@ export function WorkSubmissionComponent() {
     // User state
     const [fileUri, setFileUri] = useState('');
     const [thumbnailUri, setThumbnailUri] = useState('');
+
+    // Secure viewer state
+    const [viewerUri, setViewerUri] = useState('');
+    const [viewerOpen, setViewerOpen] = useState(false);
 
     // Admin state
     const [isAdmin, setIsAdmin] = useState(false);
@@ -460,6 +465,12 @@ export function WorkSubmissionComponent() {
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        if (file.name.toLowerCase().endsWith('.exe')) {
+            setError('Executable files (.exe) are not allowed for upload.');
+            e.target.value = '';
+            return;
+        }
 
         const setUploading = isThumbnail ? setIsUploadingThumbnail : setIsUploading;
         const setUri = isThumbnail ? setThumbnailUri : setFileUri;
@@ -994,17 +1005,13 @@ export function WorkSubmissionComponent() {
                                             <div className="flex gap-3">
                                                 {/* Thumbnail Preview */}
                                                 {sub.thumbnailUri && (
-                                                    <a
-                                                        href={sub.thumbnailUri.startsWith('ipfs://')
-                                                            ? `https://gateway.pinata.cloud/ipfs/${sub.thumbnailUri.slice(7)}`
-                                                            : sub.thumbnailUri}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="shrink-0"
+                                                    <button
+                                                        onClick={() => { setViewerUri(sub.thumbnailUri); setViewerOpen(true); }}
+                                                        className="shrink-0 cursor-pointer"
                                                     >
                                                         <img
                                                             src={sub.thumbnailUri.startsWith('ipfs://')
-                                                                ? `https://gateway.pinata.cloud/ipfs/${sub.thumbnailUri.slice(7)}`
+                                                                ? `/api/preview/${sub.thumbnailUri.slice(7)}`
                                                                 : sub.thumbnailUri}
                                                             alt="Submission thumbnail"
                                                             className="w-16 h-16 object-cover rounded-lg border border-[#2a2a3e] hover:border-[#8247E5] transition-colors"
@@ -1012,7 +1019,7 @@ export function WorkSubmissionComponent() {
                                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                             }}
                                                         />
-                                                    </a>
+                                                    </button>
                                                 )}
 
                                                 <div className="flex-1">
@@ -1030,16 +1037,12 @@ export function WorkSubmissionComponent() {
                                                         </div>
 
                                                         <div className="flex items-center gap-2">
-                                                            <a
-                                                                href={sub.fileUri.startsWith('ipfs://')
-                                                                    ? `https://gateway.pinata.cloud/ipfs/${sub.fileUri.slice(7)}`
-                                                                    : sub.fileUri}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-[#FFD700] hover:underline text-sm flex items-center gap-1"
+                                                            <button
+                                                                onClick={() => { setViewerUri(sub.fileUri); setViewerOpen(true); }}
+                                                                className="text-[#FFD700] hover:underline text-sm flex items-center gap-1 cursor-pointer bg-transparent border-none"
                                                             >
                                                                 View <ExternalLink className="w-3 h-3" />
-                                                            </a>
+                                                            </button>
 
                                                             {/* Judge Actions */}
                                                             {isJudge && sub.status === 0 && (selectedBounty.state === 0 || selectedBounty.state === 1) && (
@@ -1163,6 +1166,12 @@ export function WorkSubmissionComponent() {
                     </CardContent>
                 </Card>
             )}
+            {/* Secure File Viewer Modal */}
+            <SecureFileViewer
+                ipfsUri={viewerUri}
+                isOpen={viewerOpen}
+                onClose={() => { setViewerOpen(false); setViewerUri(''); }}
+            />
         </div>
     );
 }

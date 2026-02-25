@@ -375,7 +375,7 @@ export function AirdropClaim() {
                                             <AlertTriangle className="h-4 w-4 text-[#FFD700]" />
                                             <AlertTitle className="text-[#FFD700]">Early Unlock Penalty</AlertTitle>
                                             <AlertDescription className="text-foreground/50 text-sm">
-                                                Unlocking before conditions are met incurs a <strong>5% penalty</strong>.
+                                                Unlocking before conditions are met incurs a <strong>5% penalty</strong>
                                             </AlertDescription>
                                         </Alert>
 
