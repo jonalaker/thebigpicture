@@ -31,12 +31,21 @@ const CID_REGEX = /^[a-zA-Z0-9]+$/;
 
 const GATEWAY_BASE = 'https://gateway.lighthouse.storage/ipfs';
 
+function getCspForType(contentType: string): string {
+    // PDFs need the browser's built-in viewer which requires scripts
+    if (contentType === 'application/pdf') {
+        return "default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval' blob:; style-src 'unsafe-inline'; object-src 'self'; frame-src 'self'";
+    }
+    // Everything else stays locked down
+    return "default-src 'none'; style-src 'unsafe-inline'";
+}
+
 function getSecurityHeaders(contentType: string, contentLength?: string): Record<string, string> {
     const headers: Record<string, string> = {
         'Content-Type': contentType,
         'Content-Disposition': 'inline',
         'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+        'Content-Security-Policy': getCspForType(contentType),
         'Cache-Control': 'public, max-age=3600, immutable',
         'X-Frame-Options': 'SAMEORIGIN',
         'Referrer-Policy': 'no-referrer',

@@ -10,7 +10,7 @@ interface SecureFileViewerProps {
     onClose: () => void;
 }
 
-type FileCategory = 'image' | 'video' | 'pdf' | 'unsupported' | 'loading' | 'error';
+type FileCategory = 'image' | 'video' | 'pdf' | 'text' | 'unsupported' | 'loading' | 'error';
 
 function cidFromUri(uri: string): string | null {
     if (uri.startsWith('ipfs://')) return uri.slice(7);
@@ -23,6 +23,8 @@ function categorize(mime: string): FileCategory {
     if (mime.startsWith('image/')) return 'image';
     if (mime.startsWith('video/')) return 'video';
     if (mime === 'application/pdf') return 'pdf';
+    if (mime === 'text/plain') return 'text';
+    // Word docs can't be rendered in-browser natively
     return 'unsupported';
 }
 
@@ -30,6 +32,7 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
     const [category, setCategory] = useState<FileCategory>('loading');
     const [mimeType, setMimeType] = useState<string>('');
     const [errorMsg, setErrorMsg] = useState<string>('');
+    const [textContent, setTextContent] = useState<string>('');
     const [isFullscreen, setIsFullscreen] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +71,19 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
 
             const ct = (res.headers.get('content-type') || 'application/octet-stream').split(';')[0].trim();
             setMimeType(ct);
-            setCategory(categorize(ct));
+            const cat = categorize(ct);
+            setCategory(cat);
+
+            // For text files, fetch the content to render inline
+            if (cat === 'text' && proxyUrl) {
+                try {
+                    const textRes = await fetch(proxyUrl);
+                    const text = await textRes.text();
+                    setTextContent(text.slice(0, 500000)); // Cap at 500KB of text
+                } catch {
+                    setTextContent('Failed to load text content.');
+                }
+            }
         } catch (err) {
             console.error('Preview HEAD failed:', err);
             setCategory('error');
@@ -85,6 +100,7 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
             setCategory('loading');
             setMimeType('');
             setErrorMsg('');
+            setTextContent('');
             setIsFullscreen(false);
         };
     }, [isOpen, cid, detectType]);
@@ -132,8 +148,8 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
             <div
                 ref={containerRef}
                 className={`relative bg-[#1a1a2e] border border-[#8247E5]/40 rounded-xl shadow-2xl shadow-[#8247E5]/10 flex flex-col transition-all duration-300 ${isFullscreen
-                        ? 'w-[98vw] h-[96vh]'
-                        : 'w-[90vw] max-w-5xl h-[85vh]'
+                    ? 'w-[98vw] h-[96vh]'
+                    : 'w-[90vw] max-w-5xl h-[85vh]'
                     }`}
             >
                 {/* Header */}
@@ -188,12 +204,17 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
                     )}
 
                     {category === 'pdf' && proxyUrl && (
-                        <iframe
+                        <embed
                             src={proxyUrl}
-                            title="PDF Preview"
-                            sandbox="allow-same-origin"
+                            type="application/pdf"
                             className="w-full h-full rounded-lg border border-[#2a2a3e]"
                         />
+                    )}
+
+                    {category === 'text' && (
+                        <pre className="w-full h-full overflow-auto p-6 rounded-lg bg-[#121212] border border-[#2a2a3e] text-foreground/80 text-sm font-mono whitespace-pre-wrap break-words">
+                            {textContent || 'Loading text content…'}
+                        </pre>
                     )}
 
                     {category === 'video' && proxyUrl && (
