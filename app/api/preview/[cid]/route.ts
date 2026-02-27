@@ -9,21 +9,14 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/jpeg',
     'image/gif',
     'image/webp',
-    'image/svg+xml',
-    'image/bmp',
     // Video
     'video/mp4',
     'video/webm',
     'video/ogg',
     // Documents
     'application/pdf',
-    // Text & Archives
+    // Text
     'text/plain',
-    'application/zip',
-    'application/x-zip-compressed',
-    // Common document formats
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
 // CID validation: base32, base58, or CIDv1

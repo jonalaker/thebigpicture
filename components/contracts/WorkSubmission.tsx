@@ -461,13 +461,17 @@ export function WorkSubmissionComponent() {
         return Date.now() / 1000 > Number(deadline);
     };
 
+    // Allowed file extensions for upload
+    const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.pdf', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+
     // Upload directly from browser to Lighthouse/IPFS — no server intermediary
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isThumbnail: boolean = false) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.name.toLowerCase().endsWith('.exe')) {
-            setError('Executable files (.exe) are not allowed for upload.');
+        const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+        if (!isThumbnail && !ALLOWED_EXTENSIONS.includes(ext)) {
+            setError(`File type "${ext}" is not supported. Allowed: Videos (.mp4, .webm, .ogg, .mov, .avi, .mkv), PDFs, Text files (.txt), and Images (.png, .jpg, .gif, .webp).`);
             e.target.value = '';
             return;
         }
@@ -876,6 +880,14 @@ export function WorkSubmissionComponent() {
                                     Submit Your Work
                                 </h3>
 
+                                {/* Supported Formats Notice */}
+                                <div className="p-3 rounded-lg bg-[#8247E5]/5 border border-[#8247E5]/20">
+                                    <p className="text-xs font-semibold text-[#8247E5] mb-1">📎 Supported file formats:</p>
+                                    <p className="text-xs text-foreground/50">
+                                        <span className="text-foreground/70">Videos:</span> .mp4, .webm, .ogg, .mov, .avi, .mkv  •  <span className="text-foreground/70">Documents:</span> .pdf, .txt  •  <span className="text-foreground/70">Images:</span> .png, .jpg, .gif, .webp
+                                    </p>
+                                </div>
+
                                 {/* Upload Progress */}
                                 {uploadProgress && (
                                     <div className="p-2 rounded bg-[#8247E5]/10 text-[#8247E5] text-sm">
@@ -896,6 +908,7 @@ export function WorkSubmissionComponent() {
                                         <label className="cursor-pointer">
                                             <input
                                                 type="file"
+                                                accept=".mp4,.webm,.ogg,.mov,.avi,.mkv,.pdf,.txt,.png,.jpg,.jpeg,.gif,.webp"
                                                 className="hidden"
                                                 onChange={(e) => handleFileUpload(e, false)}
                                                 disabled={isUploading}
@@ -917,7 +930,7 @@ export function WorkSubmissionComponent() {
                                             </Button>
                                         </label>
                                     </div>
-                                    <p className="text-xs text-foreground/40">Upload your work file (images, documents, etc.) to IPFS</p>
+                                    <p className="text-xs text-foreground/40">Upload your work file to IPFS (videos, PDFs, text files, or images only)</p>
                                 </div>
 
                                 {/* Thumbnail Upload */}
