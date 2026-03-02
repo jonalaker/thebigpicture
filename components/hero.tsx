@@ -85,18 +85,20 @@ export default function Hero() {
         {/* Tagline */}
         <div className="animate-on-scroll opacity-0 mb-8 sm:mb-10">
           <span className="inline-block px-5 py-2 sm:px-6 sm:py-2.5 text-[10px] sm:text-xs uppercase tracking-[0.2em] sm:tracking-[0.3em] font-semibold text-[#FFD700] border border-[#FFD700]/30 rounded-full bg-[#FFD700]/10 shadow-[0_0_20px_rgba(255,215,0,0.15)] backdrop-blur-md">
-            🎬 The trailblazing film production studio pioneering the future of collaborative, blockchain-coordinated cinema.
+            🎬 The trailblazing film production studio -pioneering the future
+            of blockchain profit sharing and collaborative coordination.
           </span>
         </div>
 
         {/* Main Heading */}
         <h2
-          className="animate-on-scroll opacity-0 mb-10 leading-[1.1] sm:leading-tight text-gradient-purple-gold text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight drop-shadow-xl"
+          className="animate-on-scroll opacity-0 mb-8 sm:mb-10 leading-[1.1] sm:leading-tight text-gradient-purple-gold text-[clamp(1.25rem,6vw,4rem)] font-extrabold tracking-tight drop-shadow-xl whitespace-nowrap"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          Join the First Blockchain Coordinated Feature Film Production.
-          <br />
-          <span className="text-foreground/90 font-medium text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-6 block drop-shadow-md">Write the screenplay. Sign in with</span>
+          Join the First<br />
+          Blockchain Coordinated<br />
+          Feature Film Production.<br />
+          <span className="text-foreground/90 font-medium whitespace-normal text-[clamp(1rem,4vw,2.25rem)] mt-4 sm:mt-6 block drop-shadow-md">Write the screenplay. Sign in with</span>
         </h2>
 
         {/* Detailed Instructions block */}
@@ -107,13 +109,20 @@ export default function Hero() {
 
 
           <div className="space-y-5 text-base md:text-lg text-foreground/80 leading-relaxed px-2">
-            <p>
-              <span className="text-foreground font-semibold tracking-wide">Join the First Blockchain Feature Film. Write the screenplay.</span> <br className="hidden sm:block" />
-              Sign in with MetaMask wallet, submit job, including your own guru.com name.
+            <div className="text-center mb-6">
+              <span className="text-foreground font-semibold tracking-wide text-lg sm:text-xl block mb-2">
+                Be part of AI Blockchain Feature Film Production<br />
+                Write the screenplay
+              </span>
+            </div>
+            <p className="flex items-start gap-2">
+              <span className="text-[#8247E5] mt-1">✦</span>
+              <span>Sign in with MetaMask wallet, submit job, including your own guru.com name.</span>
             </p>
             <p className="flex items-start gap-2">
               <span className="text-[#8247E5] mt-1">✦</span>
-              <span>Successful job selected, and then contracted on guru.com, and paid from Safepay.</span>
+              <span>When the successful freelancer's job is selected, initial payment is made for expenses.
+              </span>
             </p>
             <p className="flex items-start gap-2">
               <span className="text-[#FFD700] mt-1">✦</span>

@@ -52,9 +52,10 @@ export default function TrustpilotSection() {
         </h2>
 
         <p className="animate-on-scroll opacity-0 text-foreground/60 mb-10 max-w-xl mx-auto leading-relaxed">
-          Discover honest reviews of{" "}
+          {/* Discover honest reviews of{" "}
           <span className="text-[#8247E5] font-semibold">THE AiGENT</span> from early readers
-          around the world. Your opinion can join them after you&apos;ve read the novella.
+          around the world. Your opinion can join them after you&apos;ve read the novella. */}
+          Check our reputation on TRUST PILOT
         </p>
 
         <div className="animate-on-scroll opacity-0">
