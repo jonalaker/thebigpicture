@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)",
+      "Bash(curl:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:x402-amoy.polygon.technology)",
+      "Bash(npm view:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.cdp.coinbase.com)",
+      "Bash(npm ls:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

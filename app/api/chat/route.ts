@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { searchDocuments, needsRebuild, refreshVectorStore } from "@/lib/rag-store"
+import { withX402V1 } from "@/lib/x402-server"
 
 // Pin44 Character System Prompt
 function getSystemPrompt(context: string): string {
@@ -39,7 +40,8 @@ ${context}
 Remember: You are Pin44. The knowledge above is YOUR knowledge. Respond as if you've always known this information.`
 }
 
-export async function POST(request: NextRequest) {
+// Internal handler — only runs after x402 payment verification
+async function chatHandler(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now()
 
   try {
@@ -142,6 +144,12 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// ─── x402 v1 Payment-Protected Export ───────────────────────────────────────
+// Wraps chatHandler with x402 v1 payment middleware for Polygon Amoy.
+// No payment → returns HTTP 402 with v1 payment requirements in body.
+// Valid payment → verifies via facilitator, runs chatHandler, then settles.
+export const POST = withX402V1(chatHandler);
 
 // Pin44 fallback response generator (only used when API key is missing)
 function generatePin44Response(userMessage: string): string {

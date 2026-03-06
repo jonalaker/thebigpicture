@@ -1,9 +1,12 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Send, X, MessageCircle } from "lucide-react"
+import { Send, X, MessageCircle, Wallet, Loader2, AlertCircle } from "lucide-react"
+import { useAccount, useConnect, useDisconnect, useWalletClient } from "wagmi"
+import { createPaymentFetch } from "@/lib/x402-client"
+import { CHAIN_NAME } from "@/lib/wagmi-config"
 
 interface Message {
   id: string
@@ -11,6 +14,9 @@ interface Message {
   content: string
   timestamp: Date
 }
+
+// ─── Price displayed to user ────────────────────────────────────────────────
+const PRICE_PER_MESSAGE = "$0.02"
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
@@ -25,7 +31,14 @@ export default function ChatWidget() {
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // ─── Wagmi Hooks ────────────────────────────────────────────────────────
+  const { address, isConnected } = useAccount()
+  const { connect, connectors, isPending: isConnecting } = useConnect()
+  const { disconnect } = useDisconnect()
+  const { data: walletClient } = useWalletClient()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -35,58 +48,104 @@ export default function ChatWidget() {
     scrollToBottom()
   }, [messages])
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  // ─── Payment-Aware Message Sender ─────────────────────────────────────
+  const handleSendMessage = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      if (!input.trim()) return
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-      timestamp: new Date(),
-    }
+      // Reset payment error
+      setPaymentError(null)
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: data.response,
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, assistantMessage])
-      } else {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
-          timestamp: new Date(),
-        }
-        setMessages((prev) => [...prev, assistantMessage])
+      // Check wallet connection
+      if (!isConnected || !walletClient) {
+        setPaymentError("Connect your wallet to send messages (costs " + PRICE_PER_MESSAGE + " USDC)")
+        return
       }
-    } catch (error) {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        content: input,
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, assistantMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }
+
+      setMessages((prev) => [...prev, userMessage])
+      const messageText = input
+      setInput("")
+      setIsLoading(true)
+
+      try {
+        // Create x402 payment-aware fetch with the user's wallet
+        const paymentFetch = createPaymentFetch(walletClient)
+
+        // This fetch will:
+        // 1. Send POST /api/chat (no payment)
+        // 2. Get 402 back with payment requirements
+        // 3. Prompt wallet to sign USDC transfer authorization 
+        // 4. Retry with PAYMENT-SIGNATURE header
+        // 5. Return the actual response
+        const response = await paymentFetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: messageText }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data.response,
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, assistantMessage])
+        } else {
+          // Handle non-402 errors
+          const errorData = await response.json().catch(() => null)
+          const errorMsg = errorData?.error || `Server error (${response.status})`
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "Sorry, I encountered an error. " + errorMsg,
+            timestamp: new Date(),
+          }
+          setMessages((prev) => [...prev, assistantMessage])
+        }
+      } catch (error: any) {
+        console.error("Chat/payment error:", error)
+
+        // Provide user-friendly error messages
+        let errorMsg = "Sorry, I encountered an error. Please try again."
+        if (error.message?.includes("No scheme registered")) {
+          errorMsg = `Wrong network. Please switch to ${CHAIN_NAME} in your wallet.`
+        } else if (error.message?.includes("Payment already attempted")) {
+          errorMsg = "Payment failed. Please check your USDC balance and try again."
+        } else if (error.message?.includes("rejected") || error.message?.includes("denied")) {
+          errorMsg = "Payment was cancelled. You can try again when ready."
+        } else if (error.message?.includes("insufficient")) {
+          errorMsg = "Insufficient USDC balance. You need at least " + PRICE_PER_MESSAGE + " USDC."
+        }
+
+        setPaymentError(errorMsg)
+
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: errorMsg,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, assistantMessage])
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [input, isConnected, walletClient]
+  )
+
+  // ─── Truncate wallet address for display ──────────────────────────────
+  const truncateAddress = (addr: string) =>
+    `${addr.slice(0, 6)}...${addr.slice(-4)}`
 
   return (
     <>
@@ -111,7 +170,7 @@ export default function ChatWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] h-[500px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] h-[540px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -131,6 +190,64 @@ export default function ChatWidget() {
             </button>
           </div>
 
+          {/* Wallet Connection Bar */}
+          <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center justify-between gap-2">
+            {isConnected && address ? (
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                <span className="text-xs text-muted-foreground truncate">
+                  {truncateAddress(address)}
+                </span>
+                <span className="text-[10px] text-muted-foreground/70 shrink-0">
+                  {CHAIN_NAME}
+                </span>
+                <button
+                  onClick={() => disconnect()}
+                  className="ml-auto text-xs text-red-400 hover:text-red-300 transition-colors shrink-0"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-1">
+                <Wallet size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  Connect wallet to chat ({PRICE_PER_MESSAGE}/msg)
+                </span>
+                <div className="ml-auto flex gap-1">
+                  {connectors.map((connector) => (
+                    <button
+                      key={connector.uid}
+                      onClick={() => connect({ connector })}
+                      disabled={isConnecting}
+                      className="text-[10px] px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {isConnecting ? (
+                        <Loader2 size={10} className="animate-spin" />
+                      ) : (
+                        connector.name
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Error Banner */}
+          {paymentError && (
+            <div className="px-3 py-2 bg-red-500/10 border-b border-red-500/20 flex items-start gap-2">
+              <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-400 leading-snug">{paymentError}</p>
+              <button
+                onClick={() => setPaymentError(null)}
+                className="ml-auto text-red-400 hover:text-red-300 shrink-0"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/30">
             {messages.map((message) => (
@@ -140,8 +257,8 @@ export default function ChatWidget() {
               >
                 <div
                   className={`max-w-[80%] px-4 py-2 rounded-2xl ${message.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-background border border-border text-foreground rounded-bl-md"
+                    ? "bg-primary text-primary-foreground rounded-br-md"
+                    : "bg-background border border-border text-foreground rounded-bl-md"
                     }`}
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
@@ -152,10 +269,15 @@ export default function ChatWidget() {
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-background border border-border text-foreground px-4 py-3 rounded-2xl rounded-bl-md">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      Processing payment & generating...
+                    </span>
                   </div>
                 </div>
               </div>
@@ -164,24 +286,45 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+          {/* Input + Price Indicator */}
           <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-background">
+            {/* Price hint */}
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-[10px] text-muted-foreground">
+                {isConnected
+                  ? `💰 ${PRICE_PER_MESSAGE} USDC per message`
+                  : "🔒 Connect wallet to send messages"}
+              </span>
+              {isConnected && (
+                <span className="text-[10px] text-emerald-500/80">
+                  ✓ Ready to pay
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading}
-                placeholder="Ask Pinn44 anything..."
+                disabled={isLoading || !isConnected}
+                placeholder={
+                  isConnected
+                    ? "Ask Pinn44 anything..."
+                    : "Connect wallet first..."
+                }
                 className="flex-1 px-4 py-2 text-sm border border-border rounded-full bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground disabled:opacity-50"
               />
               <Button
                 type="submit"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || !isConnected}
                 size="icon"
                 className="rounded-full w-10 h-10 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <Send size={18} />
+                {isLoading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Send size={18} />
+                )}
               </Button>
             </div>
           </form>
@@ -190,4 +333,3 @@ export default function ChatWidget() {
     </>
   )
 }
-

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Inter, Montserrat } from "next/font/google"
 import ChatWidget from "@/components/chat-widget"
 import VisitorCounter from "@/components/visitor-counter"
+import WalletProvider from "@/components/wallet-provider"
 import "./globals.css"
 
 const inter = Inter({
@@ -35,9 +36,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${montserrat.variable} font-sans antialiased bg-background text-foreground`}>
-        {children}
-        <ChatWidget />
-        <VisitorCounter />
+        <WalletProvider>
+          {children}
+          <ChatWidget />
+          <VisitorCounter />
+        </WalletProvider>
         <Analytics />
       </body>
     </html>
