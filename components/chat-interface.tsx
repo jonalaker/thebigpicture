@@ -92,11 +92,12 @@ export default function ChatInterface() {
           setMessages((prev) => [...prev, assistantMessage])
         } else {
           const errorData = await response.json().catch(() => null)
-          const errorMsg = errorData?.error || `Server error (${response.status})`
+          const errorMsg = errorData?.message || errorData?.error || `Server error (${response.status})`
+          setPaymentError(errorMsg)
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: "Sorry, I encountered an error. " + errorMsg,
+            content: errorMsg,
             timestamp: new Date(),
           }
           setMessages((prev) => [...prev, assistantMessage])

@@ -9,18 +9,15 @@
  */
 import { http, createConfig } from "wagmi";
 import { polygonAmoy, polygon } from "wagmi/chains";
-import { metaMask, coinbaseWallet, injected } from "wagmi/connectors";
+import { coinbaseWallet } from "wagmi/connectors";
 
 // ─── Wagmi Config ───────────────────────────────────────────────────────────
 // Supports both Polygon Amoy (testnet) and Polygon mainnet.
-// Uses injected() instead of metaMask() to avoid MetaMask SDK SSR errors
-// ("Cannot read properties of undefined (reading 'on')").
-// injected() detects MetaMask (and other wallets) via window.ethereum without
-// pulling in the MetaMask SDK which crashes during server-side rendering.
+// Wagmi v3 auto-discovers installed wallets (MetaMask, Brave, etc.) via EIP-6963,
+// so we only need to explicitly add Coinbase Wallet.
 export const wagmiConfig = createConfig({
     chains: [polygonAmoy, polygon],
     connectors: [
-        injected(),
         coinbaseWallet({ appName: "PINN44 Chatbot" }),
     ],
     transports: {

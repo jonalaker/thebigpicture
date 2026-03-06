@@ -180,11 +180,15 @@ export function withX402V1(
         }
 
         if (!verifyResult.isValid) {
-            console.warn("❌ Payment invalid:", verifyResult.invalidReason);
+            const reason = verifyResult.invalidReason || "insufficient_funds";
+            console.warn("❌ Payment invalid:", reason, "| Payer:", verifyResult.payer, "| Full response:", JSON.stringify(verifyResult));
             return NextResponse.json(
                 {
                     error: "Payment invalid",
-                    reason: verifyResult.invalidReason,
+                    reason,
+                    message: reason === "insufficient_funds"
+                        ? "Insufficient USDC balance. Get free test USDC at https://faucet.circle.com (select Polygon Amoy)."
+                        : `Payment rejected: ${reason}`,
                 },
                 { status: 402 },
             );

@@ -101,13 +101,13 @@ export default function ChatWidget() {
           }
           setMessages((prev) => [...prev, assistantMessage])
         } else {
-          // Handle non-402 errors
           const errorData = await response.json().catch(() => null)
-          const errorMsg = errorData?.error || `Server error (${response.status})`
+          const errorMsg = errorData?.message || errorData?.error || `Server error (${response.status})`
+          setPaymentError(errorMsg)
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: "Sorry, I encountered an error. " + errorMsg,
+            content: errorMsg,
             timestamp: new Date(),
           }
           setMessages((prev) => [...prev, assistantMessage])
@@ -195,10 +195,10 @@ export default function ChatWidget() {
             {isConnected && address ? (
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
-                <span className="text-xs text-muted-foreground truncate">
+                <span className="text-xs text-white font-medium truncate">
                   {truncateAddress(address)}
                 </span>
-                <span className="text-[10px] text-muted-foreground/70 shrink-0">
+                <span className="text-[10px] text-white/80 shrink-0">
                   {CHAIN_NAME}
                 </span>
                 <button
@@ -210,8 +210,8 @@ export default function ChatWidget() {
               </div>
             ) : (
               <div className="flex items-center gap-2 flex-1">
-                <Wallet size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-xs text-muted-foreground">
+                <Wallet size={14} className="text-white shrink-0" />
+                <span className="text-xs text-white font-medium">
                   Connect wallet to chat ({PRICE_PER_MESSAGE}/msg)
                 </span>
                 <div className="ml-auto flex gap-1">
@@ -220,7 +220,7 @@ export default function ChatWidget() {
                       key={connector.uid}
                       onClick={() => connect({ connector })}
                       disabled={isConnecting}
-                      className="text-[10px] px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 whitespace-nowrap"
+                      className="text-[10px] px-2 py-1 rounded-md bg-white/20 text-white font-medium hover:bg-white/30 transition-colors disabled:opacity-50 whitespace-nowrap"
                     >
                       {isConnecting ? (
                         <Loader2 size={10} className="animate-spin" />
