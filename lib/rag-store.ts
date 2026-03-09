@@ -1,11 +1,14 @@
-import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import { TaskType } from "@google/generative-ai";
-import { Document } from "@langchain/core/documents";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
 import fs from "fs";
 
+// --- Minimal Document type (no langchain dependency needed) ---
+interface Document {
+    pageContent: string;
+    metadata: Record<string, any>;
+}
+
 // --- Custom Simple Vector Store Implementation ---
-// avoiding 'langchain/vectorstores/memory' dependency issues
 interface StoredVectorDoc {
     pageContent: string;
     metadata: Record<string, any>;
@@ -21,18 +24,18 @@ class SimpleVectorStore {
 
     static async fromDocuments(
         docs: Document[],
-        embeddingsModel: GoogleGenerativeAIEmbeddings
+        embedFn: (texts: string[]) => Promise<number[][]>
     ): Promise<SimpleVectorStore> {
         const storedDocs: StoredVectorDoc[] = [];
         const texts = docs.map(d => d.pageContent);
 
         // Process in batches to avoid API limits
         const BATCH_SIZE = 10;
-        console.log(`Computed embeddings for ${docs.length} chunks...`);
+        console.log(`Computing embeddings for ${docs.length} chunks...`);
 
         for (let i = 0; i < texts.length; i += BATCH_SIZE) {
             const batchTexts = texts.slice(i, i + BATCH_SIZE);
-            const batchEmbeddings = await embeddingsModel.embedDocuments(batchTexts);
+            const batchEmbeddings = await embedFn(batchTexts);
 
             for (let j = 0; j < batchEmbeddings.length; j++) {
                 storedDocs.push({
@@ -52,11 +55,10 @@ class SimpleVectorStore {
             return { doc, score };
         });
 
-        // Sort by score descending (higher is more similar)
         results.sort((a, b) => b.score - a.score);
 
         return results.slice(0, k).map(r => [
-            new Document({ pageContent: r.doc.pageContent, metadata: r.doc.metadata }),
+            { pageContent: r.doc.pageContent, metadata: r.doc.metadata },
             r.score
         ]);
     }
@@ -87,22 +89,33 @@ class SimpleVectorStore {
 const DATA_DIR = path.join(process.cwd(), "data");
 const VECTOR_STORE_PATH = path.join(process.cwd(), "data", "vector_store.json");
 
-// Initialize embeddings model for DOCUMENT indexing
-function getDocumentEmbeddings() {
-    return new GoogleGenerativeAIEmbeddings({
-        apiKey: process.env.GEMINI_API_KEY,
-        modelName: "embedding-001",
-        taskType: TaskType.RETRIEVAL_DOCUMENT,
-    });
+// Use the same embedding model for both indexing and querying
+const EMBEDDING_MODEL = "gemini-embedding-001";
+
+function getGenAI() {
+    return new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 }
 
-// Initialize embeddings model for QUERY (searching)
-function getQueryEmbeddings() {
-    return new GoogleGenerativeAIEmbeddings({
-        apiKey: process.env.GEMINI_API_KEY,
-        modelName: "embedding-001",
-        taskType: TaskType.RETRIEVAL_QUERY,
-    });
+// Embed multiple texts (for document indexing)
+async function embedTexts(texts: string[]): Promise<number[][]> {
+    const genAI = getGenAI();
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const results: number[][] = [];
+
+    for (const text of texts) {
+        const result = await model.embedContent(text);
+        results.push(result.embedding.values);
+    }
+
+    return results;
+}
+
+// Embed a single query
+async function embedQuery(text: string): Promise<number[]> {
+    const genAI = getGenAI();
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const result = await model.embedContent(text);
+    return result.embedding.values;
 }
 
 let vectorStoreInstance: SimpleVectorStore | null = null;
@@ -152,13 +165,12 @@ function loadDocuments(): Document[] {
         if (file.endsWith(".txt")) {
             const content = fs.readFileSync(filePath, "utf-8");
             console.log(`  📄 ${file}: ${content.length} chars`);
-            // Split immediately
             const textChunks = smartSplitText(content);
             textChunks.forEach(chunk => {
-                docs.push(new Document({
+                docs.push({
                     pageContent: chunk,
                     metadata: { source: file }
-                }));
+                });
             });
         }
     }
@@ -177,7 +189,7 @@ export async function getVectorStore(): Promise<SimpleVectorStore> {
             vectorStoreInstance = SimpleVectorStore.load(VECTOR_STORE_PATH);
             return vectorStoreInstance;
         } catch (e) {
-            console.error("Korrupt vector store, recreating...");
+            console.error("Corrupt vector store, recreating...");
         }
     }
 
@@ -185,8 +197,7 @@ export async function getVectorStore(): Promise<SimpleVectorStore> {
     const docs = loadDocuments();
     if (docs.length === 0) throw new Error("No documents found");
 
-    const embeddings = getDocumentEmbeddings();
-    vectorStoreInstance = await SimpleVectorStore.fromDocuments(docs, embeddings);
+    vectorStoreInstance = await SimpleVectorStore.fromDocuments(docs, embedTexts);
 
     // Save to disk
     vectorStoreInstance.save(VECTOR_STORE_PATH);
@@ -199,8 +210,7 @@ export async function searchDocuments(query: string, topK: number = 5): Promise<
     const store = await getVectorStore();
     console.log(`\n🔍 Searching for: "${query.substring(0, 30)}..."`);
 
-    const queryEmbeddings = getQueryEmbeddings();
-    const queryEmbedding = await queryEmbeddings.embedQuery(query);
+    const queryEmbedding = await embedQuery(query);
 
     const results = await store.similaritySearchVectorWithScore(queryEmbedding, topK);
 
