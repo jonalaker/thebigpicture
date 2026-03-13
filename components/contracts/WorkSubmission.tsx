@@ -28,7 +28,10 @@ import {
     Trophy,
     Trash2,
     ImagePlus,
-    File
+    File,
+    Pencil,
+    CalendarDays,
+    X
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { useWorkSubmission, usePINN44Token } from '@/hooks/useContracts';
@@ -103,6 +106,11 @@ export function WorkSubmissionComponent() {
     const [newBountyReward, setNewBountyReward] = useState('');
     const [newBountyStake, setNewBountyStake] = useState('0');
     const [newBountyDeadlineDays, setNewBountyDeadlineDays] = useState('7');
+
+    // Edit deadline state
+    const [editingDeadlineBountyId, setEditingDeadlineBountyId] = useState<number | null>(null);
+    const [newDeadlineDate, setNewDeadlineDate] = useState('');
+    const [isUpdatingDeadline, setIsUpdatingDeadline] = useState(false);
 
     // Loading states
     const [isLoading, setIsLoading] = useState(true);
@@ -461,6 +469,108 @@ export function WorkSubmissionComponent() {
         return Date.now() / 1000 > Number(deadline);
     };
 
+    // Convert a bounty's deadline to a date input value (YYYY-MM-DD)
+    const deadlineToDateInput = (timestamp: bigint) => {
+        if (timestamp === BigInt(0)) {
+            // Default to 7 days from now
+            const d = new Date(Date.now() + 7 * 86400 * 1000);
+            return d.toISOString().split('T')[0];
+        }
+        const d = new Date(Number(timestamp) * 1000);
+        return d.toISOString().split('T')[0];
+    };
+
+    // Admin: Update Deadline
+    const handleUpdateDeadline = async (bountyId: number) => {
+        if (!newDeadlineDate) return;
+
+        setIsUpdatingDeadline(true);
+        setError(null);
+        setSuccessMessage(null);
+
+        try {
+            // Convert date string to unix timestamp (end of selected day)
+            const selectedDate = new Date(newDeadlineDate + 'T23:59:59');
+            const newDeadlineTimestamp = BigInt(Math.floor(selectedDate.getTime() / 1000));
+
+            const receipt = await workSubmission.updateDeadline(bountyId, newDeadlineTimestamp);
+            setTxHash(receipt.hash);
+            setSuccessMessage(`Deadline updated to ${formatDeadline(newDeadlineTimestamp)}!`);
+            setEditingDeadlineBountyId(null);
+            setNewDeadlineDate('');
+            await fetchBounties();
+
+            // Update selected bounty if viewing it
+            if (selectedBounty?.id === bountyId) {
+                setSelectedBounty({ ...selectedBounty, deadline: newDeadlineTimestamp });
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to update deadline';
+            setError(message);
+        } finally {
+            setIsUpdatingDeadline(false);
+        }
+    };
+
+    // Inline Edit Deadline UI component
+    const EditDeadlineInline = ({ bountyId, currentDeadline }: { bountyId: number; currentDeadline: bigint }) => {
+        if (!isAdmin) return null;
+
+        const isEditing = editingDeadlineBountyId === bountyId;
+
+        if (!isEditing) {
+            return (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingDeadlineBountyId(bountyId);
+                        setNewDeadlineDate(deadlineToDateInput(currentDeadline));
+                    }}
+                    className="ml-1 p-1 rounded-md hover:bg-[#8247E5]/20 text-[#a855f7] hover:text-[#c084fc] transition-colors"
+                    title="Edit deadline"
+                >
+                    <Pencil className="w-3.5 h-3.5" />
+                </button>
+            );
+        }
+
+        return (
+            <div className="mt-2 p-3 rounded-lg bg-[#1a1a2e] border border-[#8247E5]/40 space-y-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2 text-xs text-[#a855f7] font-semibold">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    Edit Deadline
+                </div>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="date"
+                        value={newDeadlineDate}
+                        onChange={(e) => setNewDeadlineDate(e.target.value)}
+                        min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                        className="flex-1 px-2 py-1.5 rounded-md bg-[#0d0d1a] border border-[#2a2a3e] text-sm text-foreground focus:border-[#8247E5] focus:outline-none [color-scheme:dark]"
+                    />
+                    <Button
+                        size="sm"
+                        onClick={() => handleUpdateDeadline(bountyId)}
+                        disabled={isUpdatingDeadline || !newDeadlineDate}
+                        className="bg-[#8247E5] hover:bg-[#6b35c9] text-white text-xs px-3"
+                    >
+                        {isUpdatingDeadline ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                            'Save'
+                        )}
+                    </Button>
+                    <button
+                        onClick={() => { setEditingDeadlineBountyId(null); setNewDeadlineDate(''); }}
+                        className="p-1 rounded-md hover:bg-red-900/30 text-foreground/40 hover:text-red-400 transition-colors"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     // Allowed file extensions for upload
     const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.pdf', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
 
@@ -757,7 +867,7 @@ export function WorkSubmissionComponent() {
                                                     <div>
                                                         <h4 className="font-semibold text-foreground">{bounty.title}</h4>
                                                         <p className="text-sm text-foreground/50">
-                                                            {ethers.formatEther(bounty.rewardAmount)} PINN44 | {bounty.submissionCount} submissions
+                                                            {ethers.formatEther(bounty.rewardAmount)} PINN44 | {bounty.submissionCount} submissions | <Clock className="w-3 h-3 inline" /> {formatDeadline(bounty.deadline)}
                                                         </p>
                                                     </div>
                                                     <Badge className={BountyState[bounty.state as keyof typeof BountyState]?.color || 'bg-[#2a2a3e]'}>
@@ -777,6 +887,22 @@ export function WorkSubmissionComponent() {
                                                         >
                                                             <DollarSign className="w-3 h-3 mr-1" />
                                                             Fund
+                                                        </Button>
+                                                    )}
+
+                                                    {/* Edit Deadline button */}
+                                                    {(bounty.state === 0 || bounty.state === 1) && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => {
+                                                                setEditingDeadlineBountyId(editingDeadlineBountyId === bounty.id ? null : bounty.id);
+                                                                setNewDeadlineDate(deadlineToDateInput(bounty.deadline));
+                                                            }}
+                                                            className="border-[#8247E5]/50 text-[#a855f7] hover:bg-[#8247E5]/10"
+                                                        >
+                                                            <CalendarDays className="w-3 h-3 mr-1" />
+                                                            Edit Deadline
                                                         </Button>
                                                     )}
 
@@ -817,6 +943,43 @@ export function WorkSubmissionComponent() {
                                                         View Details
                                                     </Button>
                                                 </div>
+
+                                                {/* Inline deadline editor */}
+                                                {editingDeadlineBountyId === bounty.id && (
+                                                    <div className="mt-3 p-3 rounded-lg bg-[#0d0d1a] border border-[#8247E5]/40 space-y-2">
+                                                        <div className="flex items-center gap-2 text-xs text-[#a855f7] font-semibold">
+                                                            <CalendarDays className="w-3.5 h-3.5" />
+                                                            Set New Deadline
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="date"
+                                                                value={newDeadlineDate}
+                                                                onChange={(e) => setNewDeadlineDate(e.target.value)}
+                                                                min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                                                                className="flex-1 px-2 py-1.5 rounded-md bg-[#1a1a2e] border border-[#2a2a3e] text-sm text-foreground focus:border-[#8247E5] focus:outline-none [color-scheme:dark]"
+                                                            />
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => handleUpdateDeadline(bounty.id)}
+                                                                disabled={isUpdatingDeadline || !newDeadlineDate}
+                                                                className="bg-[#8247E5] hover:bg-[#6b35c9] text-white text-xs px-3"
+                                                            >
+                                                                {isUpdatingDeadline ? (
+                                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                                ) : (
+                                                                    'Update'
+                                                                )}
+                                                            </Button>
+                                                            <button
+                                                                onClick={() => { setEditingDeadlineBountyId(null); setNewDeadlineDate(''); }}
+                                                                className="p-1 rounded-md hover:bg-red-900/30 text-foreground/40 hover:text-red-400 transition-colors"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -859,7 +1022,12 @@ export function WorkSubmissionComponent() {
                             </div>
                             <div className="p-3 rounded-lg bg-[#8247E5]/5 border border-[#8247E5]/20">
                                 <p className="text-xs text-foreground/50">Deadline</p>
-                                <p className="text-lg font-bold text-[#a855f7]">{formatDeadline(selectedBounty.deadline)}</p>
+                                <div className="flex items-center">
+                                    <p className="text-lg font-bold text-[#a855f7]">{formatDeadline(selectedBounty.deadline)}</p>
+                                    {(selectedBounty.state === 0 || selectedBounty.state === 1) && (
+                                        <EditDeadlineInline bountyId={selectedBounty.id} currentDeadline={selectedBounty.deadline} />
+                                    )}
+                                </div>
                             </div>
                             <div className="p-3 rounded-lg bg-[#1a1a2e] border border-[#2a2a3e]">
                                 <p className="text-xs text-foreground/50">Status</p>

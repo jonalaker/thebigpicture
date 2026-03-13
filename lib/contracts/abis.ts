@@ -83,6 +83,7 @@ export const WORK_SUBMISSION_ABI = [
     'function selectWinner(uint256 bountyId, uint256 submissionId)',
     'function rejectSubmission(uint256 submissionId, bool slashStake)',
     'function refundAllStakes(uint256 bountyId)',
+    'function updateDeadline(uint256 bountyId, uint256 newDeadline)',
 
     // User Write functions
     'function submitWork(uint256 bountyId, string fileUri, string thumbnailUri) payable returns (uint256)',
@@ -96,6 +97,7 @@ export const WORK_SUBMISSION_ABI = [
     'event BountyPaid(uint256 indexed bountyId, address winner, uint256 amount)',
     'event StakeRefunded(address indexed submitter, uint256 amount)',
     'event StakeSlashed(address indexed submitter, uint256 amount)',
+    'event DeadlineUpdated(uint256 indexed bountyId, uint256 oldDeadline, uint256 newDeadline)',
 ];
 
 export const CONTRIBUTOR_VAULT_ABI = [

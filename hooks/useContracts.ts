@@ -284,6 +284,12 @@ export function useWorkSubmission() {
             const tx = await contract.refundAllStakes(bountyId);
             return tx.wait();
         },
+
+        updateDeadline: async (bountyId: number, newDeadline: bigint) => {
+            if (!contract) throw new Error('Contract not available');
+            const tx = await contract.updateDeadline(bountyId, newDeadline);
+            return tx.wait();
+        },
     }), [contract, address]);
 }
 

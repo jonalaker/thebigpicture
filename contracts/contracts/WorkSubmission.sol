@@ -91,6 +91,7 @@ contract WorkSubmission is ERC2771Context, AccessControl, ReentrancyGuard {
     event BountyPaid(uint256 indexed bountyId, address winner, uint256 amount);
     event StakeRefunded(address indexed submitter, uint256 amount);
     event StakeSlashed(address indexed submitter, uint256 amount);
+    event DeadlineUpdated(uint256 indexed bountyId, uint256 oldDeadline, uint256 newDeadline);
     
     // ============ Constructor ============
     constructor(
@@ -407,6 +408,30 @@ contract WorkSubmission is ERC2771Context, AccessControl, ReentrancyGuard {
     }
     
     // ============ Admin ============
+    
+    /**
+     * @notice Update the deadline for a bounty (admin only)
+     * @param bountyId The bounty to update
+     * @param newDeadline New deadline timestamp (0 = no deadline)
+     */
+    function updateDeadline(
+        uint256 bountyId,
+        uint256 newDeadline
+    ) external onlyRole(BOUNTY_ADMIN) {
+        Bounty storage bounty = bounties[bountyId];
+        require(bounty.id != 0, "Bounty not found");
+        require(
+            bounty.state == BountyState.Open || bounty.state == BountyState.Judging,
+            "Bounty not active"
+        );
+        require(newDeadline == 0 || newDeadline > block.timestamp, "Deadline must be in future");
+        
+        uint256 oldDeadline = bounty.deadline;
+        bounty.deadline = newDeadline;
+        
+        emit DeadlineUpdated(bountyId, oldDeadline, newDeadline);
+    }
+    
     
     /**
      * @notice Withdraw slashed stakes to DAO
