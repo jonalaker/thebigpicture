@@ -1,7 +1,11 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { AirdropClaim } from '@/components/airdrop/AirdropClaim';
 import { Metadata } from 'next';
+
+const AirdropClaim = dynamic(() =>
+    import('@/components/airdrop/AirdropClaim').then((mod) => ({ default: mod.AirdropClaim }))
+);
 
 export const metadata: Metadata = {
     title: 'PINN44 Airdrop — Claim Your Free Tokens | The Big Picture',

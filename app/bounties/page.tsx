@@ -1,7 +1,11 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { WorkSubmissionComponent } from '@/components/contracts';
 import { Metadata } from 'next';
+
+const WorkSubmissionComponent = dynamic(() =>
+    import('@/components/contracts/WorkSubmission').then((mod) => ({ default: mod.WorkSubmissionComponent }))
+);
 
 export const metadata: Metadata = {
     title: 'Submit Work & Earn PINN44 Tokens | The Big Picture',

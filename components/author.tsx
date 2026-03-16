@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import kevinimage from "../app/images/kevin.jpg"
 import { useEffect, useRef } from "react"
 
@@ -52,10 +53,13 @@ export default function Author() {
               {/* Purple glow ring */}
               <div className="absolute -inset-1 bg-gradient-to-br from-[#8247E5] to-[#FFD700] rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm" />
               <div className="relative w-52 h-68 bg-[#1a1a2e] rounded-xl overflow-hidden border border-[#8247E5]/30">
-                <img
-                  src={kevinimage.src}
+                <Image
+                  src={kevinimage}
                   alt="Jonah Laker"
                   className="w-full h-full object-cover"
+                  sizes="208px"
+                  placeholder="blur"
+                  priority={false}
                 />
               </div>
               {/* Film strip accent */}

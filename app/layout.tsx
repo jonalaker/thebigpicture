@@ -1,11 +1,13 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
+import dynamic from "next/dynamic"
 import { Analytics } from "@vercel/analytics/next"
 import { Inter, Montserrat } from "next/font/google"
-import ChatWidget from "@/components/chat-widget"
-import VisitorCounter from "@/components/visitor-counter"
 import WalletProvider from "@/components/wallet-provider"
 import "./globals.css"
+
+const ChatWidget = dynamic(() => import("@/components/chat-widget"))
+const VisitorCounter = dynamic(() => import("@/components/visitor-counter"))
 
 const inter = Inter({
   subsets: ["latin"],

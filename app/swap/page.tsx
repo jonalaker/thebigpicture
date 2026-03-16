@@ -1,7 +1,9 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { FixedPriceSwapComponent } from '@/components/contracts';
 import { Metadata } from 'next';
+
+const FixedPriceSwapComponent = dynamic(() => import('@/components/contracts/FixedPriceSwap'));
 
 export const metadata: Metadata = {
     title: 'Buy PINN44 — Private Token Sale | The Big Picture',

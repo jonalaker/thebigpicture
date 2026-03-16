@@ -1195,6 +1195,8 @@ export function WorkSubmissionComponent() {
                                                                 ? `/api/preview/${sub.thumbnailUri.slice(7)}`
                                                                 : sub.thumbnailUri}
                                                             alt="Submission thumbnail"
+                                                            loading="lazy"
+                                                            decoding="async"
                                                             className="w-16 h-16 object-cover rounded-lg border border-[#2a2a3e] hover:border-[#8247E5] transition-colors"
                                                             onError={(e) => {
                                                                 (e.target as HTMLImageElement).style.display = 'none';

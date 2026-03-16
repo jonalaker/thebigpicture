@@ -198,6 +198,8 @@ export function SecureFileViewer({ ipfsUri, isOpen, onClose }: SecureFileViewerP
                         <img
                             src={proxyUrl}
                             alt="Submission preview"
+                            loading="lazy"
+                            decoding="async"
                             className="max-w-full max-h-full object-contain rounded-lg"
                             crossOrigin="anonymous"
                         />

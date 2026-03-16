@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
 import Header from "@/components/header"
 import Hero from "@/components/hero"
-import About from "@/components/about"
-import TrustpilotSection from "@/components/trustpilot-section"
-import Author from "@/components/author"
-import Contact from "@/components/contact"
 import Footer from "@/components/footer"
+
+const About = dynamic(() => import("@/components/about"))
+const Author = dynamic(() => import("@/components/author"))
+const TrustpilotSection = dynamic(() => import("@/components/trustpilot-section"))
+const Contact = dynamic(() => import("@/components/contact"))
 
 export const metadata: Metadata = {
   title: "The Big Picture — First Blockchain Film Production",

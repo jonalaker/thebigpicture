@@ -1,7 +1,11 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { ContributorVaultComponent } from '@/components/contracts';
 import { Metadata } from 'next';
+
+const ContributorVaultComponent = dynamic(() =>
+    import('@/components/contracts/ContributorVault').then((mod) => ({ default: mod.ContributorVaultComponent }))
+);
 
 export const metadata: Metadata = {
     title: 'Contributor Vault — Claim PINN44 Rewards | The Big Picture',

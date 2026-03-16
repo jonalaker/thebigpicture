@@ -4,7 +4,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
   },
   // Increase body size limit for file uploads (2GB on AWS EC2)
   experimental: {
@@ -12,6 +12,27 @@ const nextConfig = {
       bodySizeLimit: '2gb',
     },
   },
+  // Cache static assets and images for improved page speed
+  headers: async () => [
+    {
+      source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff|woff2)',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/_next/static/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+  ],
 }
 
 export default nextConfig

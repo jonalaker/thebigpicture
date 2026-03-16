@@ -1,7 +1,11 @@
+import dynamic from 'next/dynamic';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { StakingVestingComponent } from '@/components/contracts';
 import { Metadata } from 'next';
+
+const StakingVestingComponent = dynamic(() =>
+    import('@/components/contracts/StakingVesting').then((mod) => ({ default: mod.StakingVestingComponent }))
+);
 
 export const metadata: Metadata = {
     title: 'Stake PINN44 Tokens — Staking & Vesting | The Big Picture',

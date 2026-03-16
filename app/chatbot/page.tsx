@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import dynamic from "next/dynamic"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import ChatInterface from "@/components/chat-interface"
+
+const ChatInterface = dynamic(() => import("@/components/chat-interface"))
 
 export const metadata: Metadata = {
   title: "The AiGENT — AI Chat Assistant | The Big Picture",
