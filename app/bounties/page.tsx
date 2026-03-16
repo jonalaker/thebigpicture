@@ -4,18 +4,78 @@ import { WorkSubmissionComponent } from '@/components/contracts';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Submit Work | The Big Picture',
-    description: 'Submit your work and earn PINN44 tokens for completing tasks.',
+    title: 'Submit Work & Earn PINN44 Tokens | The Big Picture',
+    description:
+        'Browse available tasks and submit your work to earn PINN44 tokens. Upload videos, documents, and more to contribute to The Big Picture blockchain film project.',
+    keywords: [
+        'earn tokens',
+        'PINN44 bounties',
+        'submit work',
+        'blockchain film tasks',
+        'crypto rewards',
+        'The Big Picture',
+    ],
+    alternates: { canonical: 'https://the-big-picture.info/bounties' },
+    robots: { index: true, follow: true },
     openGraph: {
-        title: 'Submit Work — The Big Picture',
-        description: 'Submit work and earn rewards',
+        siteName: 'The Big Picture',
+        locale: 'en_US',
         type: 'website',
+        title: 'Submit Work & Earn PINN44 Tokens | The Big Picture',
+        description:
+            'Browse tasks and submit your work to earn PINN44 tokens. Contribute to The Big Picture blockchain film project.',
+        url: 'https://the-big-picture.info/bounties',
+        images: [
+            {
+                url: '/placeholder-logo.png',
+                width: 1200,
+                height: 630,
+                alt: 'Submit Work — Earn PINN44 Tokens',
+            },
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Submit Work & Earn PINN44 Tokens | The Big Picture',
+        description:
+            'Browse tasks and submit your work to earn PINN44 tokens. Contribute to The Big Picture blockchain film project.',
+        images: ['/placeholder-logo.png'],
     },
 };
 
 export default function BountiesPage() {
     return (
         <main className="min-h-screen bg-[#121212]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'Article',
+                        headline: 'Submit Work & Earn PINN44 Tokens',
+                        description:
+                            'Browse available tasks and submit your work to earn PINN44 tokens. Upload videos, documents, and more to contribute to The Big Picture blockchain film project.',
+                        author: {
+                            '@type': 'Organization',
+                            name: 'The Big Picture',
+                        },
+                        publisher: {
+                            '@type': 'Organization',
+                            name: 'The Big Picture',
+                            logo: {
+                                '@type': 'ImageObject',
+                                url: 'https://the-big-picture.info/placeholder-logo.png',
+                            },
+                        },
+                        mainEntityOfPage: {
+                            '@type': 'WebPage',
+                            '@id': 'https://the-big-picture.info/bounties',
+                        },
+                        image: 'https://the-big-picture.info/placeholder-logo.png',
+                        keywords: 'earn tokens, PINN44 bounties, submit work, blockchain film tasks, crypto rewards',
+                    }),
+                }}
+            />
             <Header />
             <div className="container mx-auto px-4 pt-28 pb-20">
                 <div className="max-w-4xl mx-auto">

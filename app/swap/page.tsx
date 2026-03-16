@@ -5,17 +5,77 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
     title: 'Buy PINN44 — Private Token Sale | The Big Picture',
-    description: 'Buy PINN44 tokens at a fixed price before public DEX listing. Early access private sale on Polygon Network.',
+    description:
+        'Buy PINN44 tokens at a fixed price before the public DEX listing. Early access to the private sale on Polygon Network. Join The Big Picture film community.',
+    keywords: [
+        'buy PINN44',
+        'token sale',
+        'private sale',
+        'Polygon token',
+        'crypto presale',
+        'The Big Picture',
+    ],
+    alternates: { canonical: 'https://the-big-picture.info/swap' },
+    robots: { index: true, follow: true },
     openGraph: {
-        title: 'Buy PINN44 — Private Sale',
-        description: 'Fixed-price PINN44 token sale before DEX listing',
+        siteName: 'The Big Picture',
+        locale: 'en_US',
         type: 'website',
+        title: 'Buy PINN44 — Private Token Sale',
+        description:
+            'Buy PINN44 tokens at a fixed price before the public DEX listing. Early access private sale on Polygon Network.',
+        url: 'https://the-big-picture.info/swap',
+        images: [
+            {
+                url: '/placeholder-logo.png',
+                width: 1200,
+                height: 630,
+                alt: 'Buy PINN44 — Private Token Sale',
+            },
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Buy PINN44 — Private Token Sale',
+        description:
+            'Buy PINN44 tokens at a fixed price before the public DEX listing. Early access private sale on Polygon Network.',
+        images: ['/placeholder-logo.png'],
     },
 };
 
 export default function SwapPage() {
     return (
         <main className="min-h-screen bg-[#121212]">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'Article',
+                        headline: 'Buy PINN44 — Private Token Sale',
+                        description:
+                            'Buy PINN44 tokens at a fixed price before the public DEX listing. Early access to the private sale on Polygon Network.',
+                        author: {
+                            '@type': 'Organization',
+                            name: 'The Big Picture',
+                        },
+                        publisher: {
+                            '@type': 'Organization',
+                            name: 'The Big Picture',
+                            logo: {
+                                '@type': 'ImageObject',
+                                url: 'https://the-big-picture.info/placeholder-logo.png',
+                            },
+                        },
+                        mainEntityOfPage: {
+                            '@type': 'WebPage',
+                            '@id': 'https://the-big-picture.info/swap',
+                        },
+                        image: 'https://the-big-picture.info/placeholder-logo.png',
+                        keywords: 'buy PINN44, token sale, private sale, Polygon token, crypto presale',
+                    }),
+                }}
+            />
             <Header />
             <div className="container mx-auto px-4 pt-28 pb-20">
                 <div className="max-w-2xl mx-auto">
