@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { searchDocuments, needsRebuild, refreshVectorStore } from "@/lib/rag-store"
 import { withX402V1 } from "@/lib/x402-server"
+import { withGeminiRetry } from "@/lib/gemini-retry"
 
 // Pin44 Character System Prompt
 function getSystemPrompt(context: string): string {
@@ -107,7 +108,7 @@ async function chatHandler(request: NextRequest): Promise<NextResponse> {
     })
 
     console.log("🤖 Sending to Gemini API...")
-    const result = await model.generateContent(message)
+    const result = await withGeminiRetry(() => model.generateContent(message), { label: "generateContent" })
     const response = result.response
     const responseText = response.text()
 
@@ -132,6 +133,9 @@ async function chatHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     if (error.message?.includes("quota") || error.message?.includes("rate")) {
+      // Surface the exact Gemini quota that tripped (e.g. per-minute vs per-day)
+      // so this is diagnosable from logs.
+      console.error("🚦 Gemini quota/rate limit hit:", error.message)
       return NextResponse.json(
         { error: "API rate limit reached. Please try again later." },
         { status: 429 }

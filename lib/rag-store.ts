@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import path from "path";
 import fs from "fs";
+import { withGeminiRetry } from "./gemini-retry";
 
 // --- Minimal Document type (no langchain dependency needed) ---
 interface Document {
@@ -103,19 +104,39 @@ async function embedTexts(texts: string[]): Promise<number[][]> {
     const results: number[][] = [];
 
     for (const text of texts) {
-        const result = await model.embedContent(text);
+        const result = await withGeminiRetry(() => model.embedContent(text), { label: "embedTexts" });
         results.push(result.embedding.values);
     }
 
     return results;
 }
 
+// Bounded in-memory cache for query embeddings — repeated questions skip the API.
+const queryEmbeddingCache = new Map<string, number[]>();
+const QUERY_CACHE_MAX = 200;
+
 // Embed a single query
 async function embedQuery(text: string): Promise<number[]> {
+    const key = text.trim().toLowerCase();
+    const cached = queryEmbeddingCache.get(key);
+    if (cached) {
+        console.log("⚡ Query embedding cache hit");
+        return cached;
+    }
+
     const genAI = getGenAI();
     const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-    const result = await model.embedContent(text);
-    return result.embedding.values;
+    const result = await withGeminiRetry(() => model.embedContent(text), { label: "embedQuery" });
+    const values = result.embedding.values;
+
+    // FIFO eviction to bound memory
+    if (queryEmbeddingCache.size >= QUERY_CACHE_MAX) {
+        const oldest = queryEmbeddingCache.keys().next().value;
+        if (oldest !== undefined) queryEmbeddingCache.delete(oldest);
+    }
+    queryEmbeddingCache.set(key, values);
+
+    return values;
 }
 
 let vectorStoreInstance: SimpleVectorStore | null = null;
