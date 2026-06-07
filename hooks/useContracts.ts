@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Contract } from 'ethers';
 import { useWallet } from './useWallet';
+import { buildSignedSubmitWork } from '@/lib/gasless';
 import { CONTRACTS_CONFIG } from '@/lib/contracts';
 import {
     PINN44_TOKEN_ABI,
@@ -150,7 +151,7 @@ export function useStakingVesting() {
 // Work Submission Hook
 export function useWorkSubmission() {
     const contract = useContract(CONTRACTS_CONFIG.WORK_SUBMISSION, WORK_SUBMISSION_ABI);
-    const { address } = useWallet();
+    const { address, signer, provider, chainId } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -225,6 +226,28 @@ export function useWorkSubmission() {
             return tx.wait();
         },
 
+        // Gasless submission: user signs an EIP-712 request, relayer pays the gas.
+        // Only valid for bounties with no native (MATIC) stake.
+        // Returns { success, txHash }.
+        submitWorkGasless: async (bountyId: number, fileUri: string, thumbnailUri: string) => {
+            if (!signer || !provider || chainId === null) {
+                throw new Error('Wallet not connected');
+            }
+            const signed = await buildSignedSubmitWork(signer, provider, chainId, {
+                bountyId,
+                fileUri,
+                thumbnailUri,
+            });
+            const res = await fetch('/api/submit-work', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ request: signed }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Gasless submission failed');
+            return json as { success: boolean; txHash: string };
+        },
+
         // Admin Write functions
         createBounty: async (
             title: string,
@@ -290,7 +313,7 @@ export function useWorkSubmission() {
             const tx = await contract.updateDeadline(bountyId, newDeadline);
             return tx.wait();
         },
-    }), [contract, address]);
+    }), [contract, address, signer, provider, chainId]);
 }
 
 // Contributor Vault Hook

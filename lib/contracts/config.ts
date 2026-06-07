@@ -18,7 +18,17 @@ export const CONTRACTS_CONFIG = {
     LIQUIDITY_MANAGER: process.env.NEXT_PUBLIC_LIQUIDITY_MANAGER_ADDRESS || '',
     GASLESS_MODULE: process.env.NEXT_PUBLIC_GASLESS_MODULE_ADDRESS || '',
     FIXED_PRICE_SWAP: process.env.NEXT_PUBLIC_FIXED_PRICE_SWAP_ADDRESS || '',
+
+    // ERC-2771 trusted forwarder for gasless meta-transactions.
+    // When set, work submissions (with no native stake) are relayed gas-free.
+    FORWARDER: process.env.NEXT_PUBLIC_FORWARDER_ADDRESS || '',
 };
+
+// EIP-712 domain name — MUST match PINN44Forwarder's constructor name.
+export const FORWARDER_NAME = 'PINN44Forwarder';
+
+// Whether gasless submission is wired up (forwarder deployed + configured).
+export const isGaslessEnabled = (): boolean => !!CONTRACTS_CONFIG.FORWARDER;
 
 // Chain configuration for wallet (Polygon Amoy Testnet)
 export const POLYGON_CHAIN = {

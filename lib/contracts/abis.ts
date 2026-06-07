@@ -175,3 +175,11 @@ export const FIXED_PRICE_SWAP_ABI = [
     'event TokensDeposited(uint256 amount)',
     'event FundsWithdrawn(address indexed to, uint256 amount)',
 ];
+
+// ERC-2771 trusted forwarder (OpenZeppelin v5 ERC2771Forwarder)
+export const FORWARDER_ABI = [
+    'function nonces(address owner) view returns (uint256)',
+    'function eip712Domain() view returns (bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)',
+    'function verify((address from, address to, uint256 value, uint256 gas, uint48 deadline, bytes data, bytes signature) request) view returns (bool)',
+    'function execute((address from, address to, uint256 value, uint256 gas, uint48 deadline, bytes data, bytes signature) request) payable',
+];

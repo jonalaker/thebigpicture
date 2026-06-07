@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { useWorkSubmission, usePINN44Token } from '@/hooks/useContracts';
-import { CONTRACTS_CONFIG, getExplorerTxUrl } from '@/lib/contracts';
+import { CONTRACTS_CONFIG, getExplorerTxUrl, isGaslessEnabled } from '@/lib/contracts';
 import { ConnectWalletBanner } from '@/components/ConnectWallet';
 import { SecureFileViewer } from '@/components/SecureFileViewer';
 
@@ -423,12 +423,26 @@ export function WorkSubmissionComponent() {
                 ? selectedBounty.stakeRequired
                 : BigInt(0);
 
-            const receipt = await workSubmission.submitWork(
-                selectedBounty.id,
-                fileUri,
-                thumbnailUri || '',
-                stakeValue
-            );
+            // Gasless path: when sponsorship is enabled and the bounty needs no
+            // on-chain stake, the user only signs — the relayer pays the gas.
+            const canGoGasless = isGaslessEnabled() && selectedBounty.stakeRequired === BigInt(0);
+
+            let receipt: { hash: string };
+            if (canGoGasless) {
+                const result = await workSubmission.submitWorkGasless(
+                    selectedBounty.id,
+                    fileUri,
+                    thumbnailUri || ''
+                );
+                receipt = { hash: result.txHash };
+            } else {
+                receipt = await workSubmission.submitWork(
+                    selectedBounty.id,
+                    fileUri,
+                    thumbnailUri || '',
+                    stakeValue
+                );
+            }
 
             // Log to off-chain Google Sheets ledger
             try {
@@ -446,7 +460,7 @@ export function WorkSubmissionComponent() {
             }
 
             setTxHash(receipt.hash);
-            setSuccessMessage('Work submitted successfully!');
+            setSuccessMessage(canGoGasless ? 'Work submitted successfully — gas was covered for you! 🎉' : 'Work submitted successfully!');
             setFileUri('');
             setThumbnailUri('');
             await fetchSubmissions(selectedBounty.id);
@@ -1144,6 +1158,13 @@ export function WorkSubmissionComponent() {
                                         ⚠️ This bounty requires a stake of {ethers.formatEther(selectedBounty.stakeRequired)}
                                         {selectedBounty.stakeToken === ethers.ZeroAddress ? ' MATIC' : ' tokens'}
                                     </p>
+                                )}
+
+                                {isGaslessEnabled() && selectedBounty.stakeRequired === BigInt(0) && (
+                                    <div className="flex items-center gap-2 p-2 rounded-lg bg-[#00897b]/10 border border-[#00897b]/30 text-sm text-[#00897b]">
+                                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                                        <span>Gas-free submission — we cover the network fee. Just sign the request in your wallet (no MATIC needed).</span>
+                                    </div>
                                 )}
 
                                 <Button
