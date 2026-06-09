@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { FORWARDER_ABI, WORK_SUBMISSION_ABI } from '@/lib/contracts/abis';
+import { sendTxWithRetry, NETWORK_BUSY_MESSAGE } from '@/lib/tx-retry';
 
 /**
  * Gasless work submission relay.
@@ -115,18 +116,26 @@ export async function POST(request: NextRequest) {
         }
 
         // ---- Relay (relayer pays gas) ----
-        const tx = await forwarder.execute(reqTuple, { value: 0n });
-        const receipt = await tx.wait();
+        // Auto-retry transient network/mempool failures, escalating gas to
+        // "aggressive" if needed. Re-broadcasting a request that already mined is
+        // blocked by the forwarder nonce, so this never double-submits.
+        const receipt = await sendTxWithRetry(provider, (overrides) =>
+            forwarder.execute(reqTuple, { value: 0n, ...overrides })
+        );
 
         return NextResponse.json({
             success: true,
-            txHash: receipt?.hash || tx.hash,
+            txHash: receipt?.hash,
             message: 'Work submitted gas-free!',
         });
     } catch (error) {
         console.error('Gasless submit error:', error);
         const message = error instanceof Error ? error.message : 'Unknown error';
 
+        // Exhausted retries + aggressive gas — tell the user to wait or bump gas.
+        if (message === NETWORK_BUSY_MESSAGE) {
+            return NextResponse.json({ error: NETWORK_BUSY_MESSAGE }, { status: 503 });
+        }
         if (message.includes('insufficient funds')) {
             return NextResponse.json(
                 { error: 'Sponsor wallet has insufficient gas. Please contact support.' },

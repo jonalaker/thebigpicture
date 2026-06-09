@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Contract } from 'ethers';
 import { useWallet } from './useWallet';
 import { buildSignedSubmitWork } from '@/lib/gasless';
+import { sendTxWithRetry, postJsonWithRetry } from '@/lib/tx-retry';
 import { CONTRACTS_CONFIG } from '@/lib/contracts';
 import {
     PINN44_TOKEN_ABI,
@@ -37,7 +38,7 @@ function useContract(address: string, abi: string[]): Contract | null {
 // PINN44 Token Hook
 export function usePINN44Token() {
     const contract = useContract(CONTRACTS_CONFIG.PINN44_TOKEN, PINN44_TOKEN_ABI);
-    const { address } = useWallet();
+    const { address, provider } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -61,16 +62,14 @@ export function usePINN44Token() {
         // Write functions
         approve: async (spender: string, amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.approve(spender, amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.approve(spender, amount, o));
         },
 
         transfer: async (to: string, amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.transfer(to, amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.transfer(to, amount, o));
         },
-    }), [contract, address]);
+    }), [contract, address, provider]);
 }
 
 // MerkleDistributor hook removed — contract not currently deployed
@@ -78,7 +77,7 @@ export function usePINN44Token() {
 // Staking & Vesting Hook
 export function useStakingVesting() {
     const contract = useContract(CONTRACTS_CONFIG.STAKING_VESTING, STAKING_VESTING_ABI);
-    const { address } = useWallet();
+    const { address, provider } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -118,34 +117,29 @@ export function useStakingVesting() {
         // Write functions
         stake: async (amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.stake(amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.stake(amount, o));
         },
 
         requestUnstake: async (amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.requestUnstake(amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.requestUnstake(amount, o));
         },
 
         completeUnstake: async () => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.completeUnstake();
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.completeUnstake(o));
         },
 
         claimVested: async () => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.claimVested();
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.claimVested(o));
         },
 
         claimRewards: async () => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.claimRewards();
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.claimRewards(o));
         },
-    }), [contract, address]);
+    }), [contract, address, provider]);
 }
 
 // Work Submission Hook
@@ -220,10 +214,12 @@ export function useWorkSubmission() {
         // User Write functions
         submitWork: async (bountyId: number, fileUri: string, thumbnailUri: string, stakeValue?: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.submitWork(bountyId, fileUri, thumbnailUri, {
-                value: stakeValue || BigInt(0),
-            });
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) =>
+                contract.submitWork(bountyId, fileUri, thumbnailUri, {
+                    value: stakeValue || BigInt(0),
+                    ...o,
+                })
+            );
         },
 
         // Gasless submission: user signs an EIP-712 request, relayer pays the gas.
@@ -238,14 +234,12 @@ export function useWorkSubmission() {
                 fileUri,
                 thumbnailUri,
             });
-            const res = await fetch('/api/submit-work', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ request: signed }),
-            });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error || 'Gasless submission failed');
-            return json as { success: boolean; txHash: string };
+            // Retry transient transport failures; the relayer escalates gas
+            // server-side and returns the network-busy message if it gives up.
+            return postJsonWithRetry<{ success: boolean; txHash: string }>(
+                '/api/submit-work',
+                { request: signed }
+            );
         },
 
         // Admin Write functions
@@ -259,59 +253,54 @@ export function useWorkSubmission() {
             deadline: bigint
         ) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.createBounty(
-                title,
-                description,
-                rewardToken,
-                rewardAmount,
-                stakeRequired,
-                stakeToken,
-                deadline
+            return sendTxWithRetry(provider, (o) =>
+                contract.createBounty(
+                    title,
+                    description,
+                    rewardToken,
+                    rewardAmount,
+                    stakeRequired,
+                    stakeToken,
+                    deadline,
+                    o
+                )
             );
-            return tx.wait();
         },
 
         fundBounty: async (bountyId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.fundBounty(bountyId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.fundBounty(bountyId, o));
         },
 
         startJudging: async (bountyId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.startJudging(bountyId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.startJudging(bountyId, o));
         },
 
         cancelBounty: async (bountyId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.cancelBounty(bountyId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.cancelBounty(bountyId, o));
         },
 
         // Judge Write functions
         selectWinner: async (bountyId: number, submissionId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.selectWinner(bountyId, submissionId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.selectWinner(bountyId, submissionId, o));
         },
 
         rejectSubmission: async (submissionId: number, slashStake: boolean) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.rejectSubmission(submissionId, slashStake);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.rejectSubmission(submissionId, slashStake, o));
         },
 
         refundAllStakes: async (bountyId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.refundAllStakes(bountyId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.refundAllStakes(bountyId, o));
         },
 
         updateDeadline: async (bountyId: number, newDeadline: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.updateDeadline(bountyId, newDeadline);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.updateDeadline(bountyId, newDeadline, o));
         },
     }), [contract, address, signer, provider, chainId]);
 }
@@ -319,7 +308,7 @@ export function useWorkSubmission() {
 // Contributor Vault Hook
 export function useContributorVault() {
     const contract = useContract(CONTRACTS_CONFIG.CONTRIBUTOR_VAULT, CONTRIBUTOR_VAULT_ABI);
-    const { address } = useWallet();
+    const { address, provider } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -348,22 +337,20 @@ export function useContributorVault() {
         // Write functions
         claimLockedTokens: async () => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.claimLockedTokens();
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.claimLockedTokens(o));
         },
 
         earlyUnlock: async () => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.earlyUnlock();
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.earlyUnlock(o));
         },
-    }), [contract, address]);
+    }), [contract, address, provider]);
 }
 
 // Governance Module Hook
 export function useGovernanceModule() {
     const contract = useContract(CONTRACTS_CONFIG.GOVERNANCE_MODULE, GOVERNANCE_MODULE_ABI);
-    const { address } = useWallet();
+    const { address, provider } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -392,22 +379,20 @@ export function useGovernanceModule() {
         // Write functions
         vote: async (proposalId: number, support: boolean) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.vote(proposalId, support);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.vote(proposalId, support, o));
         },
 
         executeProposal: async (proposalId: number) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.executeProposal(proposalId);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.executeProposal(proposalId, o));
         },
-    }), [contract, address]);
+    }), [contract, address, provider]);
 }
 
 // Fixed Price Swap Hook
 export function useFixedPriceSwap() {
     const contract = useContract(CONTRACTS_CONFIG.FIXED_PRICE_SWAP, FIXED_PRICE_SWAP_ABI);
-    const { address } = useWallet();
+    const { address, provider } = useWallet();
 
     return useMemo(() => ({
         contract,
@@ -446,33 +431,30 @@ export function useFixedPriceSwap() {
         // User Write functions
         buyTokens: async (maticAmount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.buyTokens({ value: maticAmount });
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) =>
+                contract.buyTokens({ value: maticAmount, ...o })
+            );
         },
 
         // Admin Write functions
         setPrice: async (newPrice: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.setPrice(newPrice);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.setPrice(newPrice, o));
         },
 
         setSaleActive: async (active: boolean) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.setSaleActive(active);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.setSaleActive(active, o));
         },
 
         depositTokens: async (amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.depositTokens(amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.depositTokens(amount, o));
         },
 
         withdrawFunds: async (to: string, amount: bigint) => {
             if (!contract) throw new Error('Contract not available');
-            const tx = await contract.withdrawFunds(to, amount);
-            return tx.wait();
+            return sendTxWithRetry(provider, (o) => contract.withdrawFunds(to, amount, o));
         },
-    }), [contract, address]);
+    }), [contract, address, provider]);
 }
