@@ -9,6 +9,7 @@
         "deploy:amoy": "hardhat run scripts/deploy.ts --network polygon_amoy",
         "deploy:polygon": "hardhat run scripts/deploy.ts --network polygon",
         "deploy:gasless": "hardhat run scripts/deploy-gasless.ts --network polygon_amoy",
+        "deploy:gasless:polygon": "hardhat run scripts/deploy-gasless.ts --network polygon",
         "node": "hardhat node",
         "verify": "hardhat verify"
     },

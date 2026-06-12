@@ -13,8 +13,9 @@ import * as fs from "fs";
  * NOTE: the new WorkSubmission starts with zero bounties. Recreate/fund your
  * bounties against the new address after deployment.
  *
- * Run:  npm run deploy:gasless   (add the script to contracts/package.json)
- *   or: hardhat run scripts/deploy-gasless.ts --network polygon_amoy
+ * Run (testnet):  npm run deploy:gasless           (--network polygon_amoy)
+ *     (mainnet):  npm run deploy:gasless:polygon   (--network polygon)
+ *   or: hardhat run scripts/deploy-gasless.ts --network <polygon_amoy|polygon>
  */
 async function main() {
     const [deployer] = await ethers.getSigners();
