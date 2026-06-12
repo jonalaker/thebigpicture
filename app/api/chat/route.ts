@@ -103,7 +103,7 @@ async function chatHandler(request: NextRequest): Promise<NextResponse> {
     // Generate response with Gemini
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: getSystemPrompt(context),
     })
 
@@ -132,7 +132,9 @@ async function chatHandler(request: NextRequest): Promise<NextResponse> {
       )
     }
 
-    if (error.message?.includes("quota") || error.message?.includes("rate")) {
+    // Use word-boundary matching so unrelated errors (e.g. a 404 whose URL
+    // contains "generateContent") aren't misclassified as rate limits.
+    if (/\b429\b|rate limit|quota|resource has been exhausted/i.test(error.message ?? "")) {
       // Surface the exact Gemini quota that tripped (e.g. per-minute vs per-day)
       // so this is diagnosable from logs.
       console.error("🚦 Gemini quota/rate limit hit:", error.message)
